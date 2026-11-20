@@ -1,21 +1,139 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#142d27"><meta name="description" content="CivicEvents connects people with the moments, services and stories shaping their city.">
-  <title>CivicEvents — Your city, in motion</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['DM Sans','sans-serif'],display:['Manrope','sans-serif']},colors:{forest:{50:'#eef4f0',100:'#dce9df',200:'#b9d3c1',300:'#8db59a',400:'#5f9673',500:'#397451',600:'#285d40',700:'#204a36',800:'#193b2e',900:'#142d27'},sand:{50:'#fbfaf7',100:'#f4f1e9',200:'#e8e2d5'},ink:'#17211d',lime:'#c8e66b'}}}};</script>
-  <link rel="stylesheet" href="assets/css/app.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173D35">
+
+    <meta name="description" content="CivicEvents — Discover events, connect with your community and stay informed about what's happening in your city.">
+
+    <title>CivicEvents | Your City, Your Community</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+          href="assets/images/favicon.svg">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#172522',
+                        forest: '#173D35',
+                        moss: '#527C68',
+                        lime: '#D6EE9B',
+                        paper: '#F7F8F4',
+                        surface: '#FFFFFF',
+                        muted: '#718078',
+                        line: '#E6EAE3',
+                        danger: '#DC5555',
+                        warning: '#E5A642'
+                    },
+
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif']
+                    },
+
+                    boxShadow: {
+                        soft: '0 12px 40px rgba(23, 37, 34, 0.07)',
+                        card: '0 4px 20px rgba(23, 37, 34, 0.05)'
+                    },
+
+                    borderRadius: {
+                        '4xl': '2rem'
+                    },
+
+                    animation: {
+                        'fade-in': 'fadeIn 0.4s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out'
+                    },
+
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+
+                        slideUp: {
+                            '0%': {
+                                opacity: '0',
+                                transform: 'translateY(15px)'
+                            },
+                            '100%': {
+                                opacity: '1',
+                                transform: 'translateY(0)'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="assets/css/app.css">
+
+    <!-- jQuery -->
+    <script
+        src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous">
+    </script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
 </head>
-<body class="bg-sand-50 text-ink font-sans antialiased">
-  <div id="app"><div class="min-h-screen grid place-items-center"><div class="text-center"><div class="brand-mark mx-auto mb-4">C</div><p class="text-sm text-slate-500">Preparing your city experience…</p></div></div></div>
-  <div id="toast-region" class="fixed top-5 right-5 z-[100] space-y-2" aria-live="polite"></div>
-  <div id="modal-root"></div>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="assets/js/app.js"></script>
-</body></html>
+
+<body class="bg-paper text-ink font-sans antialiased">
+
+    <!-- Main Application Container -->
+    <div id="app">
+
+        <!-- Initial Loading Screen -->
+        <div class="min-h-screen flex items-center justify-center">
+
+            <div class="text-center">
+
+                <div class="brand-mark mx-auto mb-5">
+                    C
+                </div>
+
+                <h1 class="font-display font-bold text-xl text-forest">
+                    CivicEvents
+                </h1>
+
+                <p class="text-sm text-muted mt-2">
+                    Preparing your city experience...
+                </p>
+
+                <div class="mt-6 flex justify-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-moss animate-bounce"></span>
+                    <span class="w-2 h-2 rounded-full bg-moss animate-bounce [animation-delay:150ms]"></span>
+                    <span class="w-2 h-2 rounded-full bg-moss animate-bounce [animation-delay:300ms]"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Application JavaScript -->
+    <script type="module" src="assets/js/app.js"></script>
+
+</body>
+</html>
