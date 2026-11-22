@@ -82,13 +82,26 @@ const Events = {
    * Get a safe event image URL.
    */
   getImage(event) {
-    const image = event.image_url || event.image || "";
+    let metadata = event.metadata || {};
 
-    if (!image) {
-      return "";
+    if (typeof metadata === "string") {
+      try {
+        metadata = JSON.parse(metadata);
+      } catch {
+        metadata = {};
+      }
     }
 
-    if (image.startsWith("http://") || image.startsWith("https://")) {
+    const image =
+      event.image_url ||
+      event.image ||
+      metadata.image_url ||
+      metadata.image ||
+      "";
+
+    if (!image) return "";
+
+    if (/^https?:\/\//i.test(image)) {
       return image;
     }
 

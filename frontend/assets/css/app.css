@@ -1073,3 +1073,327 @@ h6 {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* =========================================
+   23. PUBLIC PAGE LAYOUTS
+========================================= */
+
+.page-content {
+    width: 100%;
+    max-width: 1280px;
+    min-height: calc(100vh - var(--header-height) - 80px);
+    margin: 0 auto;
+    padding: 42px 32px 64px;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 38px 40px;
+    margin-bottom: 28px;
+    background: linear-gradient(120deg, #EDF4EA, #F7F8F4);
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+}
+
+.page-header h1 {
+    margin: 8px 0;
+    color: var(--color-forest);
+    font-family: 'Manrope', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1.2px;
+}
+
+.eyebrow {
+    color: var(--color-moss);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.page-description {
+    margin-top: 8px;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+/* =========================================
+   24. EVENTS SEARCH AND FILTERS
+========================================= */
+
+.events-toolbar {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 20px;
+    padding: 24px;
+    margin-bottom: 30px;
+    background: white;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.events-toolbar .form-group,
+.media-search {
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.events-toolbar input,
+.events-toolbar select,
+.media-search input {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 14px;
+    color: var(--color-ink);
+    background: #FAFBF9;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    outline: none;
+}
+
+.events-toolbar input:focus,
+.events-toolbar select:focus,
+.media-search input:focus {
+    border-color: var(--color-moss);
+    box-shadow: 0 0 0 3px rgba(82, 124, 104, 0.12);
+}
+
+/* =========================================
+   25. EVENTS GRID AND CARDS
+========================================= */
+
+.events-grid,
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.event-card,
+.media-card {
+    min-width: 0;
+    overflow: hidden;
+    background: white;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card:hover,
+.media-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
+}
+
+.event-card-image {
+    display: block;
+    width: 100%;
+    height: 205px;
+    object-fit: cover;
+    background: #E8EDE6;
+}
+
+.event-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-moss);
+    font-family: 'Manrope', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #E7EFE4, #D6E4D4);
+}
+
+.event-card-content,
+.media-card-content {
+    padding: 22px;
+}
+
+.event-card-content h2,
+.media-card-content h2 {
+    margin: 12px 0;
+    color: var(--color-forest);
+    font-family: 'Manrope', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.event-card-content p,
+.media-card-content p {
+    margin-top: 10px;
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.event-card-content .btn {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.event-location {
+    color: var(--color-muted);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    color: var(--color-forest);
+    background: #EDF4EA;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+/* =========================================
+   26. ANNOUNCEMENTS AND PROMOS
+========================================= */
+
+.media-search {
+    max-width: 600px;
+    margin-bottom: 30px;
+}
+
+.media-card audio,
+.media-card video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 18px;
+    border-radius: 10px;
+}
+
+.promo-video {
+    background: #172522;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+}
+
+.media-unavailable {
+    padding: 12px;
+    color: var(--color-muted);
+    background: #F7F8F4;
+    border-radius: 9px;
+    font-size: 12px;
+}
+
+.caption-details {
+    margin-top: 16px;
+    padding: 13px;
+    background: #F7F8F4;
+    border-radius: 10px;
+    color: var(--color-forest);
+    font-size: 13px;
+}
+
+.caption-details summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.caption-details p {
+    margin-top: 12px;
+}
+
+/* =========================================
+   27. EMPTY AND LOADING STATES
+========================================= */
+
+.empty-state,
+.loading-state {
+    grid-column: 1 / -1;
+    padding: 55px 25px;
+    text-align: center;
+    background: white;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+}
+
+.empty-state h2 {
+    margin-bottom: 10px;
+    color: var(--color-forest);
+    font-family: 'Manrope', sans-serif;
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.empty-state p {
+    margin-bottom: 18px;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.form-message {
+    margin-bottom: 20px;
+    padding: 13px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.form-message.error {
+    color: #A83232;
+    background: #FCECEC;
+}
+
+.form-message.success {
+    color: #245A3C;
+    background: #EAF5EC;
+}
+
+/* =========================================
+   28. PUBLIC PAGE RESPONSIVENESS
+========================================= */
+
+@media (max-width: 900px) {
+    .events-grid,
+    .media-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .events-toolbar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .events-toolbar .form-group:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-content {
+        padding: 24px 16px 40px;
+    }
+
+    .page-header {
+        padding: 26px 22px;
+    }
+
+    .page-header h1 {
+        font-size: 27px;
+    }
+
+    .events-toolbar {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .events-toolbar .form-group:first-child {
+        grid-column: auto;
+    }
+
+    .events-grid,
+    .media-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .event-card-image {
+        height: 190px;
+    }
+}
