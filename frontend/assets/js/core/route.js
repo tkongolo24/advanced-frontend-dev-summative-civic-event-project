@@ -10,6 +10,7 @@ import auth from "./auth.js";
  * - Protected routes
  * - Admin-only routes
  * - Browser back and forward navigation
+ * - Query string support
  */
 
 class Router {
@@ -24,19 +25,13 @@ class Router {
 
   /**
    * Register a route.
-   *
-   * Example:
-   * router.register("/events", {
-   *   title: "Events",
-   *   render: () => renderEvents()
-   * });
    */
   register(path, config = {}) {
     this.routes[path] = {
       title: config.title || "CivicEvents",
       render: config.render || (() => {}),
       requiresAuth: config.requiresAuth || false,
-      requiresAdmin: config.requiresAdmin || false
+      requiresAdmin: config.requiresAdmin || false,
     };
 
     return this;
@@ -50,11 +45,16 @@ class Router {
       path = `/${path}`;
     }
 
+    if (window.location.hash === `#${path}`) {
+      this.handleRoute();
+      return;
+    }
+
     window.location.hash = path;
   }
 
   /**
-   * Get the current route path.
+   * Get the current route path without query parameters.
    */
   getCurrentPath() {
     const hash = window.location.hash;
@@ -63,37 +63,60 @@ class Router {
       return "/";
     }
 
-    return hash.replace(/^#/, "");
+    const path = hash.replace(/^#/, "");
+    return path.split("?")[0] || "/";
   }
 
   /**
-   * Find the route configuration.
+   * Get the current query string as URLSearchParams.
+   */
+  getQueryParams() {
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf("?");
+
+    if (queryIndex === -1) {
+      return new URLSearchParams();
+    }
+
+    return new URLSearchParams(
+      hash.substring(queryIndex + 1)
+    );
+  }
+
+  /**
+   * Find route configuration.
    */
   getRoute(path) {
     return this.routes[path] || null;
   }
 
   /**
-   * Check whether the user is allowed to access a route.
+   * Check whether the user can access a route.
    */
   checkAccess(route) {
-    if (route.requiresAuth && !auth.isAuthenticated()) {
+    if (
+      route.requiresAuth &&
+      !auth.isAuthenticated()
+    ) {
       return {
         allowed: false,
-        redirect: "/login"
+        redirect: "/login",
       };
     }
 
-    if (route.requiresAdmin && !auth.isAdmin()) {
+    if (
+      route.requiresAdmin &&
+      !auth.isAdmin()
+    ) {
       return {
         allowed: false,
-        redirect: "/events"
+        redirect: "/events",
       };
     }
 
     return {
       allowed: true,
-      redirect: null
+      redirect: null,
     };
   }
 
@@ -118,9 +141,12 @@ class Router {
 
     const access = this.checkAccess(route);
 
-    // Redirect users who do not have permission.
+    // Redirect users without permission.
     if (!access.allowed) {
-      this.navigate(access.redirect);
+      if (this.getCurrentPath() !== access.redirect) {
+        this.navigate(access.redirect);
+      }
+
       return;
     }
 
@@ -128,16 +154,16 @@ class Router {
 
     document.title = `${route.title} | CivicEvents`;
 
-    // Render the page.
+    // Render the registered route.
     route.render();
 
-    // Notify other application modules.
+    // Notify feature modules.
     window.dispatchEvent(
       new CustomEvent("route:change", {
         detail: {
           path,
-          route
-        }
+          route,
+        },
       })
     );
   }
@@ -148,9 +174,10 @@ class Router {
   start() {
     if (!window.location.hash) {
       this.navigate("/");
-    } else {
-      this.handleRoute();
+      return;
     }
+
+    this.handleRoute();
   }
 
   /**

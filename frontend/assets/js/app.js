@@ -1,19 +1,27 @@
 
-import router from "./core/router.js";
+import router from "./core/route.js";
 import auth from "./core/auth.js";
 import { APP_CONFIG } from "./config.js";
+
+// Feature modules
+import "./auth.js";
+import "./events.js";
+import "./media.js";
+import "./account.js";
+import "./admin.js";
 
 const app = document.getElementById("app");
 
 /**
  * CivicEvents Application
  */
-
 const App = {
   /**
-   * Render the main application shell.
+   * Render the shared application shell.
    */
   renderShell() {
+    if (!app) return;
+
     const user = auth.getCurrentUser();
     const isLoggedIn = auth.isAuthenticated();
 
@@ -25,9 +33,11 @@ const App = {
             <span class="brand-name">CivicEvents</span>
           </a>
 
-          <nav class="navbar-links">
+          <nav class="navbar-links" aria-label="Main navigation">
             <a href="#/events" class="nav-link">Events</a>
-            <a href="#/announcements" class="nav-link">Announcements</a>
+            <a href="#/announcements" class="nav-link">
+              Announcements
+            </a>
             <a href="#/promos" class="nav-link">Promos</a>
           </nav>
 
@@ -40,18 +50,29 @@ const App = {
                   </a>
 
                   <a href="#/profile" class="nav-link">
-                    ${user?.first_name || "My Profile"}
+                    ${this.escapeHTML(
+                      user?.first_name || "My Profile"
+                    )}
                   </a>
 
                   ${
                     auth.isAdmin()
-                      ? `<a href="#/admin" class="btn btn-secondary">
+                      ? `
+                        <a
+                          href="#/admin"
+                          class="btn btn-secondary"
+                        >
                           Admin Dashboard
-                        </a>`
+                        </a>
+                      `
                       : ""
                   }
 
-                  <button id="logout-button" class="btn btn-outline">
+                  <button
+                    id="logout-button"
+                    class="btn btn-outline"
+                    type="button"
+                  >
                     Logout
                   </button>
                 `
@@ -88,10 +109,23 @@ const App = {
   },
 
   /**
-   * Attach shared application events.
+   * Escape dynamic text before inserting it into HTML.
+   */
+  escapeHTML(value = "") {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  },
+
+  /**
+   * Attach shared navigation events.
    */
   attachShellEvents() {
-    const logoutButton = document.getElementById("logout-button");
+    const logoutButton =
+      document.getElementById("logout-button");
 
     if (logoutButton) {
       logoutButton.addEventListener("click", () => {
@@ -103,11 +137,12 @@ const App = {
   },
 
   /**
-   * Render a page heading and content area.
-   * Feature modules will replace these temporary page views.
+   * Render a temporary page.
+   * Feature modules replace this content after route changes.
    */
   renderPage(title, description, content = "") {
-    const pageContent = document.getElementById("page-content");
+    const pageContent =
+      document.getElementById("page-content");
 
     if (!pageContent) return;
 
@@ -140,17 +175,24 @@ const App = {
             <div class="feature-grid">
               <a href="#/events" class="feature-card">
                 <h2>Explore Events</h2>
-                <p>Discover activities and register for upcoming events.</p>
+                <p>
+                  Discover activities and register for
+                  upcoming events.
+                </p>
               </a>
 
               <a href="#/announcements" class="feature-card">
                 <h2>Announcements</h2>
-                <p>Stay informed with important city updates.</p>
+                <p>
+                  Stay informed with important city updates.
+                </p>
               </a>
 
               <a href="#/promos" class="feature-card">
                 <h2>Promos</h2>
-                <p>Watch videos and discover local promotions.</p>
+                <p>
+                  Watch videos and discover local promotions.
+                </p>
               </a>
             </div>
           `
@@ -248,10 +290,27 @@ const App = {
         this.renderPage(
           "Page not found",
           "The page you are looking for does not exist.",
-          `<a href="#/" class="btn btn-primary">Return Home</a>`
+          `
+            <a href="#/" class="btn btn-primary">
+              Return Home
+            </a>
+          `
         );
       }
     });
+  },
+
+  /**
+   * Refresh the shell and rerender the current route.
+   */
+  refreshCurrentPage() {
+    this.renderShell();
+
+    const currentRoute =
+      window.location.hash.replace(/^#/, "").split("?")[0] ||
+      "/";
+
+    router.navigate(currentRoute);
   },
 
   /**
@@ -259,7 +318,9 @@ const App = {
    */
   init() {
     if (!app) {
-      console.error("CivicEvents root element was not found.");
+      console.error(
+        "CivicEvents root element was not found."
+      );
       return;
     }
 
@@ -267,16 +328,26 @@ const App = {
     this.registerRoutes();
     router.start();
 
+    // Update navigation after successful login.
+    window.addEventListener("auth:login", () => {
+      this.refreshCurrentPage();
+    });
+
+    // Update navigation after logout.
     window.addEventListener("auth:logout", () => {
       this.renderShell();
     });
 
+    // Handle expired or invalid authentication.
     window.addEventListener("auth:unauthorized", () => {
+      auth.logout();
       this.renderShell();
       router.navigate("/login");
     });
 
-    console.log(`${APP_CONFIG.APP_NAME} initialized.`);
+    console.log(
+      `${APP_CONFIG.APP_NAME} initialized.`
+    );
   }
 };
 
