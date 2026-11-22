@@ -27,13 +27,13 @@ const App = {
 
     app.innerHTML = `
       <div class="app-shell">
-        <header class="navbar">
-          <a href="#/" class="brand">
+        <header class="top-navbar">
+          <a href="#/" class="brand flex items-center gap-3">
             <span class="brand-mark">C</span>
             <span class="brand-name">CivicEvents</span>
           </a>
 
-          <nav class="navbar-links" aria-label="Main navigation">
+          <nav class="navbar-links flex items-center gap-8" aria-label="Main navigation">
             <a href="#/events" class="nav-link">Events</a>
             <a href="#/announcements" class="nav-link">
               Announcements
@@ -41,7 +41,7 @@ const App = {
             <a href="#/promos" class="nav-link">Promos</a>
           </nav>
 
-          <div class="navbar-actions">
+          <div class="navbar-actions flex items-center gap-3">
             ${
               isLoggedIn
                 ? `

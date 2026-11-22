@@ -21,59 +21,59 @@ const AuthUI = {
    */
   renderLogin() {
     const container = this.getContainer();
-
     if (!container) return;
 
     container.innerHTML = `
-      <section class="auth-page">
-        <div class="auth-card">
-          <div class="auth-heading">
-            <span class="brand-mark">C</span>
-            <p class="eyebrow">WELCOME BACK</p>
-            <h1>Sign in to CivicEvents</h1>
-            <p>Stay connected with what's happening in your city.</p>
+      <section class="auth-layout">
+        <div class="auth-visual">
+          <div>
+            <div class="flex items-center gap-3 mb-12">
+              <span class="brand-mark">C</span>
+              <span class="brand-name">CivicEvents</span>
+            </div>
+            <p class="text-sm uppercase tracking-widest mb-5">YOUR CITY. YOUR COMMUNITY.</p>
+            <h1>Discover what brings your community together.</h1>
+            <p class="mt-5 text-base">Find local events, stay informed and connect with the people shaping your city.</p>
           </div>
+          <p class="text-sm">© 2026 CivicEvents. Making cities more connected.</p>
+        </div>
 
-          <div id="auth-message" class="form-message hidden"></div>
-
-          <form id="login-form" class="auth-form">
-            <div class="form-group">
-              <label for="login-email">Email address</label>
-              <input
-                type="email"
-                id="login-email"
-                name="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                required
-              />
+        <div class="auth-content">
+          <div class="auth-form">
+            <div class="auth-heading">
+              <p class="text-sm font-semibold text-forest">WELCOME BACK</p>
+              <h2>Sign in to CivicEvents</h2>
+              <p>Stay connected with what's happening in your city.</p>
             </div>
 
-            <div class="form-group">
-              <label for="login-password">Password</label>
-              <input
-                type="password"
-                id="login-password"
-                name="password"
-                placeholder="Enter your password"
-                autocomplete="current-password"
-                required
-              />
-            </div>
+            <div id="auth-message" class="form-message hidden"></div>
 
-            <button
-              type="submit"
-              id="login-submit"
-              class="btn btn-primary btn-full"
-            >
-              Sign In
-            </button>
-          </form>
+            <form id="login-form">
+              <div class="form-group">
+                <label class="form-label" for="login-email">Email address</label>
+                <input class="form-input" type="email" id="login-email"
+                  name="email" placeholder="you@example.com"
+                  autocomplete="email" required />
+              </div>
 
-          <p class="auth-switch">
-            Don't have an account?
-            <a href="#/signup">Create one</a>
-          </p>
+              <div class="form-group">
+                <label class="form-label" for="login-password">Password</label>
+                <input class="form-input" type="password" id="login-password"
+                  name="password" placeholder="Enter your password"
+                  autocomplete="current-password" required />
+              </div>
+
+              <button type="submit" id="login-submit"
+                class="btn btn-primary w-full">
+                Sign In
+              </button>
+            </form>
+
+            <p class="auth-switch mt-6 text-sm">
+              Don't have an account?
+              <a class="text-forest font-semibold" href="#/signup">Create one</a>
+            </p>
+          </div>
         </div>
       </section>
     `;
@@ -86,103 +86,83 @@ const AuthUI = {
    */
   renderSignup() {
     const container = this.getContainer();
-
     if (!container) return;
 
     container.innerHTML = `
-      <section class="auth-page">
-        <div class="auth-card">
-          <div class="auth-heading">
-            <span class="brand-mark">C</span>
-            <p class="eyebrow">GET STARTED</p>
-            <h1>Create your account</h1>
-            <p>Join your community and discover city events.</p>
+      <section class="auth-layout">
+        <div class="auth-visual">
+          <div>
+            <div class="flex items-center gap-3 mb-12">
+              <span class="brand-mark">C</span>
+              <span class="brand-name">CivicEvents</span>
+            </div>
+            <p class="text-sm uppercase tracking-widest mb-5">BE PART OF SOMETHING BIGGER.</p>
+            <h1>Your community starts with a connection.</h1>
+            <p class="mt-5 text-base">Create an account to discover events, participate and stay informed about your city.</p>
           </div>
+          <p class="text-sm">© 2026 CivicEvents. Making cities more connected.</p>
+        </div>
 
-          <div id="auth-message" class="form-message hidden"></div>
+        <div class="auth-content">
+          <div class="auth-form">
+            <div class="auth-heading">
+              <p class="text-sm font-semibold text-forest">GET STARTED</p>
+              <h2>Create your account</h2>
+              <p>Join your community and discover city events.</p>
+            </div>
 
-          <form id="signup-form" class="auth-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="signup-first-name">First name</label>
-                <input
-                  type="text"
-                  id="signup-first-name"
-                  name="first_name"
-                  placeholder="First name"
-                  autocomplete="given-name"
-                  required
-                />
+            <div id="auth-message" class="form-message hidden"></div>
+
+            <form id="signup-form">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                  <label class="form-label" for="signup-first-name">First name</label>
+                  <input class="form-input" type="text" id="signup-first-name"
+                    name="first_name" placeholder="First name"
+                    autocomplete="given-name" required />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="signup-last-name">Last name</label>
+                  <input class="form-input" type="text" id="signup-last-name"
+                    name="last_name" placeholder="Last name"
+                    autocomplete="family-name" required />
+                </div>
               </div>
 
               <div class="form-group">
-                <label for="signup-last-name">Last name</label>
-                <input
-                  type="text"
-                  id="signup-last-name"
-                  name="last_name"
-                  placeholder="Last name"
-                  autocomplete="family-name"
-                  required
-                />
+                <label class="form-label" for="signup-email">Email address</label>
+                <input class="form-input" type="email" id="signup-email"
+                  name="email" placeholder="you@example.com"
+                  autocomplete="email" required />
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="signup-email">Email address</label>
-              <input
-                type="email"
-                id="signup-email"
-                name="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                required
-              />
-            </div>
+              <div class="form-group">
+                <label class="form-label" for="signup-password">Password</label>
+                <input class="form-input" type="password" id="signup-password"
+                  name="password" placeholder="Create a strong password"
+                  autocomplete="new-password" minlength="8" required />
+                <small class="form-hint">At least 8 characters, including uppercase, lowercase, a number and a special character.</small>
+              </div>
 
-            <div class="form-group">
-              <label for="signup-password">Password</label>
-              <input
-                type="password"
-                id="signup-password"
-                name="password"
-                placeholder="Create a strong password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-              <small>
-                At least 8 characters, including uppercase,
-                lowercase, a number, and a special character.
-              </small>
-            </div>
+              <div class="form-group">
+                <label class="form-label" for="signup-confirm-password">Confirm password</label>
+                <input class="form-input" type="password" id="signup-confirm-password"
+                  name="confirm_password" placeholder="Re-enter your password"
+                  autocomplete="new-password" minlength="8" required />
+              </div>
 
-            <div class="form-group">
-              <label for="signup-confirm-password">Confirm password</label>
-              <input
-                type="password"
-                id="signup-confirm-password"
-                name="confirm_password"
-                placeholder="Re-enter your password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
+              <button type="submit" id="signup-submit"
+                class="btn btn-primary w-full">
+                Create Account
+              </button>
+            </form>
 
-            <button
-              type="submit"
-              id="signup-submit"
-              class="btn btn-primary btn-full"
-            >
-              Create Account
-            </button>
-          </form>
-
-          <p class="auth-switch">
-            Already have an account?
-            <a href="#/login">Sign in</a>
-          </p>
+            <p class="auth-switch mt-6 text-sm">
+              Already have an account?
+              <a class="text-forest font-semibold" href="#/login">Sign in</a>
+            </p>
+          </div>
         </div>
       </section>
     `;
