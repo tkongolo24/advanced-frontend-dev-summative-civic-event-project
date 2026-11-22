@@ -1,355 +1,205 @@
 
-import authService from "./core/auth.js";
-import router from "./core/router.js";
+import api from "./api.js";
+import storage from "./storage.js";
+import { API_ENDPOINTS, USER_ROLES } from "../config.js";
 
 /**
- * CivicEvents Authentication UI
+ * CivicEvents Authentication Service
  *
- * Login and signup pages.
+ * Handles authentication requests, session storage,
+ * user information and role checks.
  */
 
-const AuthUI = {
-  /**
-   * Get the page content container.
-   */
-  getContainer() {
-    return document.getElementById("page-content");
-  },
+class AuthService {
+  constructor() {
+    this.storage = storage;
+  }
 
   /**
-   * Render the login page.
+   * Extract token from different possible backend response shapes.
    */
-  renderLogin() {
-    const container = this.getContainer();
-
-    if (!container) return;
-
-    container.innerHTML = `
-      <section class="auth-page">
-        <div class="auth-card">
-          <div class="auth-heading">
-            <span class="brand-mark">C</span>
-            <p class="eyebrow">WELCOME BACK</p>
-            <h1>Sign in to CivicEvents</h1>
-            <p>Stay connected with what's happening in your city.</p>
-          </div>
-
-          <div id="auth-message" class="form-message hidden"></div>
-
-          <form id="login-form" class="auth-form">
-            <div class="form-group">
-              <label for="login-email">Email address</label>
-              <input
-                type="email"
-                id="login-email"
-                name="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="login-password">Password</label>
-              <input
-                type="password"
-                id="login-password"
-                name="password"
-                placeholder="Enter your password"
-                autocomplete="current-password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              id="login-submit"
-              class="btn btn-primary btn-full"
-            >
-              Sign In
-            </button>
-          </form>
-
-          <p class="auth-switch">
-            Don't have an account?
-            <a href="#/signup">Create one</a>
-          </p>
-        </div>
-      </section>
-    `;
-
-    this.attachLoginEvents();
-  },
+  extractToken(data) {
+    return (
+      data?.token ||
+      data?.accessToken ||
+      data?.access_token ||
+      data?.data?.token ||
+      data?.data?.accessToken ||
+      data?.data?.access_token ||
+      null
+    );
+  }
 
   /**
-   * Render the signup page.
+   * Extract user information from backend response.
    */
-  renderSignup() {
-    const container = this.getContainer();
-
-    if (!container) return;
-
-    container.innerHTML = `
-      <section class="auth-page">
-        <div class="auth-card">
-          <div class="auth-heading">
-            <span class="brand-mark">C</span>
-            <p class="eyebrow">GET STARTED</p>
-            <h1>Create your account</h1>
-            <p>Join your community and discover city events.</p>
-          </div>
-
-          <div id="auth-message" class="form-message hidden"></div>
-
-          <form id="signup-form" class="auth-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="signup-first-name">First name</label>
-                <input
-                  type="text"
-                  id="signup-first-name"
-                  name="first_name"
-                  placeholder="First name"
-                  autocomplete="given-name"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="signup-last-name">Last name</label>
-                <input
-                  type="text"
-                  id="signup-last-name"
-                  name="last_name"
-                  placeholder="Last name"
-                  autocomplete="family-name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="signup-email">Email address</label>
-              <input
-                type="email"
-                id="signup-email"
-                name="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="signup-password">Password</label>
-              <input
-                type="password"
-                id="signup-password"
-                name="password"
-                placeholder="Create a strong password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-              <small>
-                At least 8 characters, including uppercase,
-                lowercase, a number, and a special character.
-              </small>
-            </div>
-
-            <div class="form-group">
-              <label for="signup-confirm-password">Confirm password</label>
-              <input
-                type="password"
-                id="signup-confirm-password"
-                name="confirm_password"
-                placeholder="Re-enter your password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              id="signup-submit"
-              class="btn btn-primary btn-full"
-            >
-              Create Account
-            </button>
-          </form>
-
-          <p class="auth-switch">
-            Already have an account?
-            <a href="#/login">Sign in</a>
-          </p>
-        </div>
-      </section>
-    `;
-
-    this.attachSignupEvents();
-  },
+  extractUser(data) {
+    return (
+      data?.user ||
+      data?.data?.user ||
+      data?.data ||
+      null
+    );
+  }
 
   /**
-   * Display a message to the user.
+   * Login with email and password.
    */
-  showMessage(message, type = "error") {
-    const messageBox = document.getElementById("auth-message");
+  async login(credentials) {
+    const { email, password } = credentials;
 
-    if (!messageBox) return;
+    if (!email || !password) {
+      throw new Error("Email and password are required.");
+    }
 
-    messageBox.textContent = message;
-    messageBox.className = `form-message ${type}`;
-  },
+    const response = await api.post(
+      API_ENDPOINTS.AUTH.LOGIN,
+      { email, password },
+      { requiresAuth: false }
+    );
 
-  /**
-   * Set the loading state of a form button.
-   */
-  setLoading(button, isLoading, loadingText, normalText) {
-    if (!button) return;
+    const token = this.extractToken(response);
+    const user = this.extractUser(response);
 
-    button.disabled = isLoading;
-    button.textContent = isLoading ? loadingText : normalText;
-  },
-
-  /**
-   * Handle login form submission.
-   */
-  attachLoginEvents() {
-    const form = document.getElementById("login-form");
-    const button = document.getElementById("login-submit");
-
-    if (!form) return;
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const email = document
-        .getElementById("login-email")
-        .value
-        .trim();
-
-      const password = document
-        .getElementById("login-password")
-        .value;
-
-      this.setLoading(button, true, "Signing in...", "Sign In");
-
-      try {
-        const user = await authService.login({
-          email,
-          password
-        });
-
-        this.showMessage("Login successful!", "success");
-
-        // Redirect administrators to their dashboard.
-        if (user.role === "admin") {
-          router.navigate("/admin");
-        } else {
-          router.navigate("/events");
-        }
-      } catch (error) {
-        this.showMessage(
-          error.message || "Unable to sign in. Please try again."
-        );
-      } finally {
-        this.setLoading(button, false, "Signing in...", "Sign In");
-      }
-    });
-  },
-
-  /**
-   * Handle signup form submission.
-   */
-  attachSignupEvents() {
-    const form = document.getElementById("signup-form");
-    const button = document.getElementById("signup-submit");
-
-    if (!form) return;
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const userData = {
-        first_name: document
-          .getElementById("signup-first-name")
-          .value
-          .trim(),
-
-        last_name: document
-          .getElementById("signup-last-name")
-          .value
-          .trim(),
-
-        email: document
-          .getElementById("signup-email")
-          .value
-          .trim(),
-
-        password: document
-          .getElementById("signup-password")
-          .value,
-
-        confirm_password: document
-          .getElementById("signup-confirm-password")
-          .value
-      };
-
-      if (userData.password !== userData.confirm_password) {
-        this.showMessage("Passwords do not match.");
-        return;
-      }
-
-      this.setLoading(
-        button,
-        true,
-        "Creating account...",
-        "Create Account"
+    if (!token) {
+      throw new Error(
+        "Login response did not contain an authentication token."
       );
+    }
 
-      try {
-        await authService.signup(userData);
+    if (!user || typeof user !== "object") {
+      throw new Error(
+        "Login response did not contain valid user information."
+      );
+    }
 
-        this.showMessage(
-          "Account created successfully!",
-          "success"
-        );
+    this.storage.saveLogin(
+      token,
+      user,
+      response?.session || response?.data?.session || {}
+    );
 
-        if (authService.isAuthenticated()) {
-          router.navigate("/events");
-        } else {
-          router.navigate("/login");
-        }
-      } catch (error) {
-        this.showMessage(
-          error.message || "Unable to create your account."
-        );
-      } finally {
-        this.setLoading(
-          button,
-          false,
-          "Creating account...",
-          "Create Account"
-        );
-      }
-    });
-  }
-};
+    window.dispatchEvent(
+      new CustomEvent("auth:login", {
+        detail: { user }
+      })
+    );
 
-/**
- * Render authentication pages when their routes change.
- */
-window.addEventListener("route:change", (event) => {
-  const path = event.detail?.path;
-
-  if (path === "/login") {
-    AuthUI.renderLogin();
+    return user;
   }
 
-  if (path === "/signup") {
-    AuthUI.renderSignup();
-  }
-});
+  /**
+   * Register a new user.
+   */
+  async signup(userData) {
+    const {
+      first_name,
+      last_name,
+      email,
+      password,
+      confirm_password
+    } = userData;
 
-export default AuthUI;
+    if (!first_name || !last_name || !email || !password) {
+      throw new Error("Please complete all required fields.");
+    }
+
+    if (password !== confirm_password) {
+      throw new Error("Passwords do not match.");
+    }
+
+    if (password.length < 8) {
+      throw new Error("Password must contain at least 8 characters.");
+    }
+
+    const response = await api.post(
+      API_ENDPOINTS.AUTH.SIGNUP,
+      {
+        first_name,
+        last_name,
+        email,
+        password
+      },
+      { requiresAuth: false }
+    );
+
+    const token = this.extractToken(response);
+    const user = this.extractUser(response);
+
+    // Some backends register the user without automatically logging in.
+    if (token && user && typeof user === "object") {
+      this.storage.saveLogin(
+        token,
+        user,
+        response?.session || response?.data?.session || {}
+      );
+    }
+
+    return response;
+  }
+
+  /**
+   * Logout the current user.
+   */
+  logout() {
+    this.storage.clear();
+
+    window.dispatchEvent(
+      new CustomEvent("auth:logout")
+    );
+  }
+
+  /**
+   * Check whether a user is authenticated.
+   */
+  isAuthenticated() {
+    return this.storage.isAuthenticated();
+  }
+
+  /**
+   * Get the currently logged-in user.
+   */
+  getCurrentUser() {
+    return this.storage.getUser();
+  }
+
+  /**
+   * Get the current user's role.
+   */
+  getUserRole() {
+    return this.getCurrentUser()?.role || null;
+  }
+
+  /**
+   * Check whether the current user is an administrator.
+   */
+  isAdmin() {
+    return this.getUserRole() === USER_ROLES.ADMIN;
+  }
+
+  /**
+   * Check whether the current user has a specific role.
+   */
+  hasRole(role) {
+    return this.getUserRole() === role;
+  }
+
+  /**
+   * Get the current authentication state.
+   */
+  getAuthState() {
+    return this.storage.getAuthState();
+  }
+
+  /**
+   * Clear the current authentication session.
+   */
+  clearSession() {
+    this.storage.clear();
+  }
+}
+
+const authService = new AuthService();
+
+export { AuthService };
+export default authService;

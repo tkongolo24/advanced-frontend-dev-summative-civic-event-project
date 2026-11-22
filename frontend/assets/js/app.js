@@ -346,7 +346,7 @@ const App = {
     });
 
     console.log(
-      `${APP_CONFIG.APP_NAME} initialized.`
+      `${APP_CONFIG.NAME} initialized.`
     );
   }
 };
