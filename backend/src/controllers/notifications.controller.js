@@ -50,7 +50,7 @@ export const list = async (req, res, next) => {
 export const get = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const notification = await Notifications.findById(id);
+        const notification = await Notifications.findByIdForUser(id, req.user.id);
 
         if (!notification) {
             return res.status(404).json({
