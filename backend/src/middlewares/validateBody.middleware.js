@@ -1,25 +1,25 @@
 import { validationResult } from 'express-validator';
+import { removeUploadedFile } from '../utils/media.js';
 
-/**
- * Middleware to validate request body using express-validator
- */
-const validateBody = (req, res, next) => {
+const validateBody = async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        // Return first error or all errors
+        if (req.file) {
+            await removeUploadedFile(req.file);
+        }
+
         return res.status(400).json({
             status: 400,
             message: 'Validation failed',
-            errors: errors.array().map(err => ({
+            errors: errors.array().map((err) => ({
                 field: err.path,
                 message: err.msg,
             })),
         });
     }
 
-    // Proceed if no errors
-    next();
+    return next();
 };
 
 export default validateBody;

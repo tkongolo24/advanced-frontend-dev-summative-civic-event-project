@@ -53,7 +53,9 @@ export const remove = async (id) => {
 export const findById = async (id) => {
     const res = await db.query('SELECT * FROM notifications WHERE id=$1', [id]);
     return res.rows[0] || null;
-};\n\nexport const findByIdForUser = async (id, userId) => {
+};
+
+export const findByIdForUser = async (id, userId) => {
     const res = await db.query(
         `SELECT *
          FROM notifications

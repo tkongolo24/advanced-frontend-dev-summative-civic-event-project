@@ -1,49 +1,57 @@
 import * as AnnouncementModel from '../models/announcements.model.js';
 import * as NotificationModel from '../models/notifications.model.js';
+import { removeUploadedFile, removeManagedMedia } from '../utils/media.js';
 
-/**
- * Get all announcements
- */
+const isAdmin = (req) => req.user?.role === 'admin';
+
+const notifySafely = async (data) => {
+    try {
+        await NotificationModel.create(data);
+    } catch (error) {
+        console.error('Announcement notification could not be created:', error);
+    }
+};
+
 export const getAllAnnouncements = async (req, res, next) => {
     try {
-        const announcements = await AnnouncementModel.findAll(req.query);
+        const announcements = await AnnouncementModel.findAll(req.query, isAdmin(req));
+
         return res.status(200).json({
             status: 200,
             message: 'Announcements retrieved successfully',
-            data: announcements
+            data: announcements,
         });
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get a single announcement
- */
 export const getAnnouncementById = async (req, res, next) => {
     try {
-        const { id } = req.params;
-        const announcement = await AnnouncementModel.findById(id);
-        if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
-        
+        const announcement = await AnnouncementModel.findById(
+            req.params.id,
+            isAdmin(req)
+        );
+
+        if (!announcement) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Announcement not found',
+            });
+        }
+
         return res.status(200).json({
             status: 200,
             message: 'Announcement retrieved successfully',
-            data: announcement
+            data: announcement,
         });
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Create a new announcement (with audio file upload)
- */
 export const createAnnouncement = async (req, res, next) => {
     try {
-        const { title, published = true } = req.body;
-
-        // Ensure file was uploaded
         if (!req.file) {
             return res.status(400).json({
                 status: 400,
@@ -51,23 +59,28 @@ export const createAnnouncement = async (req, res, next) => {
             });
         }
 
-        // Construct full file URL dynamically (based on your server’s base URL)
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const audio_url = `${baseUrl}/uploads/announcements/${req.file.filename}`;
+        const { title, published = true } = req.body;
+        const audio_url =
+            `${req.protocol}://${req.get('host')}/uploads/announcements/${req.file.filename}`;
 
-        // Create announcement
-        const created = await AnnouncementModel.create({
-            title,
-            audio_url,
-            published,
-        });
+        let created;
 
-        // Create a broadcast notification for all users
-        await NotificationModel.create({
+        try {
+            created = await AnnouncementModel.create({
+                title,
+                audio_url,
+                published,
+            });
+        } catch (error) {
+            await removeUploadedFile(req.file);
+            throw error;
+        }
+
+        await notifySafely({
             title: 'New Announcement Published',
             message: `A new announcement titled "${title}" has been added.`,
             type: 'announcement',
-            recipient_id: null, // broadcast
+            recipient_id: null,
             metadata: { announcement_id: created.id },
             created_by: req.user?.id || null,
         });
@@ -82,23 +95,46 @@ export const createAnnouncement = async (req, res, next) => {
     }
 };
 
-/**
- * Update an announcement
- */
 export const updateAnnouncement = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const existing = await AnnouncementModel.findById(id, true);
 
-        // Check if announcement exists
-        const existing = await AnnouncementModel.findById(id);
         if (!existing) {
+            if (req.file) await removeUploadedFile(req.file);
+
             return res.status(404).json({
                 status: 404,
                 message: 'Announcement not found',
             });
         }
 
-        const updated = await AnnouncementModel.update(id, req.body);
+        const fields = {
+            title: req.body.title,
+            published: req.body.published,
+        };
+
+        if (req.file) {
+            fields.audio_url =
+                `${req.protocol}://${req.get('host')}/uploads/announcements/${req.file.filename}`;
+        }
+
+        let updated;
+
+        try {
+            updated = await AnnouncementModel.update(id, fields);
+        } catch (error) {
+            if (req.file) await removeUploadedFile(req.file);
+            throw error;
+        }
+
+        if (req.file) {
+            await removeManagedMedia(
+                existing.audio_url,
+                'announcements',
+                req.get('host')
+            );
+        }
 
         return res.status(200).json({
             status: 200,
@@ -110,59 +146,50 @@ export const updateAnnouncement = async (req, res, next) => {
     }
 };
 
-/**
- * Delete an announcement
- */
 export const deleteAnnouncement = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const deleted = await AnnouncementModel.remove(req.params.id);
 
-        // Check if announcement exists
-        const existing = await AnnouncementModel.findById(id);
-        if (!existing) {
+        if (!deleted) {
             return res.status(404).json({
                 status: 404,
                 message: 'Announcement not found',
             });
         }
 
-        await AnnouncementModel.remove(id);
+        await removeManagedMedia(
+            deleted.audio_url,
+            'announcements',
+            req.get('host')
+        );
 
         return res.status(200).json({
             status: 200,
-            message: 'Announcement deleted successfully'
+            message: 'Announcement deleted successfully',
         });
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Publish an announcement
- */
 export const publishAnnouncement = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const announcement = await AnnouncementModel.publish(req.params.id);
 
-        // Check if announcement exists
-        const existing = await AnnouncementModel.findById(id);
-        if (!existing) {
+        if (!announcement) {
             return res.status(404).json({
                 status: 404,
                 message: 'Announcement not found',
             });
         }
 
-        const announcement = await AnnouncementModel.publish(id);
-
-        // Optional: create a notification when published
-        await NotificationModel.create({
+        await notifySafely({
             title: 'Announcement Published',
             message: `The announcement "${announcement.title}" is now live.`,
             type: 'announcement',
             recipient_id: null,
             metadata: { announcement_id: announcement.id },
-            created_by: req.user?.id || null
+            created_by: req.user?.id || null,
         });
 
         return res.status(200).json({
@@ -175,23 +202,16 @@ export const publishAnnouncement = async (req, res, next) => {
     }
 };
 
-/**
- * Unpublish an announcement
- */
 export const unpublishAnnouncement = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const announcement = await AnnouncementModel.unpublish(req.params.id);
 
-        // Check if announcement exists
-        const existing = await AnnouncementModel.findById(id);
-        if (!existing) {
+        if (!announcement) {
             return res.status(404).json({
                 status: 404,
                 message: 'Announcement not found',
             });
         }
-        
-        const announcement = await AnnouncementModel.unpublish(id);
 
         return res.status(200).json({
             status: 200,

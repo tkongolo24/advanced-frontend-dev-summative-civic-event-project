@@ -1,68 +1,95 @@
 import * as Promos from '../models/promos.model.js';
 import * as Notifications from '../models/notifications.model.js';
-import * as PromoModel from '../models/promos.model.js';
+import { removeUploadedFile, removeManagedMedia } from '../utils/media.js';
 
-/**
- * Get all promos (paginated)
- */
+const isAdmin = (req) => req.user?.role === 'admin';
+
+const notifySafely = async (data) => {
+    try {
+        await Notifications.create(data);
+    } catch (error) {
+        console.error('Promo notification could not be created:', error);
+    }
+};
+
 export const list = async (req, res, next) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
-        const result = await Promos.findAll({ page: Number(page), limit: Number(limit) });
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+        const result = await Promos.findAll(
+            { page, limit },
+            isAdmin(req)
+        );
+
         return res.status(200).json({
             status: 200,
             message: 'Promos fetched successfully',
             data: result.promos,
             pagination: result.pagination,
         });
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 };
 
-/**
- * Get a single promo by ID
- */
 export const get = async (req, res, next) => {
     try {
-        const promo = await Promos.findById(req.params.id);
+        const promo = await Promos.findById(
+            req.params.id,
+            isAdmin(req)
+        );
+
         if (!promo) {
-            return res.status(404).json({ status: 404, message: 'Promo not found' });
+            return res.status(404).json({
+                status: 404,
+                message: 'Promo not found',
+            });
         }
-        return res.status(200).json({ status: 200, data: promo });
-    } catch (err) {
-        next(err);
+
+        return res.status(200).json({
+            status: 200,
+            data: promo,
+        });
+    } catch (error) {
+        next(error);
     }
 };
 
-/**
- * Create a new promo (admin only)
- */
 export const create = async (req, res, next) => {
     try {
-        const { title, description, caption_text } = req.body;
-        const created_by = req.user.id;
-
         if (!req.file) {
-            return res.status(400).json({ status: 400, message: 'Video file is required' });
+            return res.status(400).json({
+                status: 400,
+                message: 'Video file is required',
+            });
         }
 
-        const video_url = `${req.protocol}://${req.get('host')}/uploads/promos/${req.file.filename}`;
+        const { title, description, caption_text } = req.body;
+        const created_by = req.user.id;
+        const video_url =
+            `${req.protocol}://${req.get('host')}/uploads/promos/${req.file.filename}`;
 
-        const promo = await Promos.create({
-            title,
-            description,
-            caption_text,
-            video_url,
-            created_by,
-        });
+        let promo;
 
-        // Create notification
-        await Notifications.create({
+        try {
+            promo = await Promos.create({
+                title,
+                description,
+                caption_text,
+                video_url,
+                created_by,
+            });
+        } catch (error) {
+            await removeUploadedFile(req.file);
+            throw error;
+        }
+
+        await notifySafely({
             title: 'New Promo Added!',
             message: `A new promo titled "${promo.title}" has been published.`,
             type: 'promo',
-            recipient_id: null, // null => broadcast to all
+            recipient_id: null,
             metadata: { promo_id: promo.id },
             created_by,
         });
@@ -72,21 +99,23 @@ export const create = async (req, res, next) => {
             message: 'Promo created successfully',
             data: promo,
         });
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 };
 
-/**
- * Update an existing promo
- */
 export const update = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const existingPromo = await Promos.findById(id, true);
 
-        const existingPromo = await Promos.findById(id);
         if (!existingPromo) {
-            return res.status(404).json({ status: 404, message: 'Promo not found' });
+            if (req.file) await removeUploadedFile(req.file);
+
+            return res.status(404).json({
+                status: 404,
+                message: 'Promo not found',
+            });
         }
 
         const fieldsToUpdate = {
@@ -96,70 +125,91 @@ export const update = async (req, res, next) => {
             published: req.body.published,
         };
 
-        // Optional video upload
         if (req.file) {
-            fieldsToUpdate.video_url = `${req.protocol}://${req.get('host')}/uploads/promos/${req.file.filename}`;
+            fieldsToUpdate.video_url =
+                `${req.protocol}://${req.get('host')}/uploads/promos/${req.file.filename}`;
         }
 
-        const updated = await Promos.update(id, fieldsToUpdate);
+        let updated;
 
-        return res.status(200).json({
-            status: 200,
-            message: 'Promo updated successfully',
-            data: updated,
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-/**
- * Delete a promo
- */
-export const remove = async (req, res, next) => {
-    try {
-        const promo = await Promos.findById(req.params.id);
-        if (!promo) {
-            return res.status(404).json({ status: 404, message: 'Promo not found' });
+        try {
+            updated = await Promos.update(id, fieldsToUpdate);
+        } catch (error) {
+            if (req.file) await removeUploadedFile(req.file);
+            throw error;
         }
 
-        await Promos.remove(req.params.id);
+        if (!updated) {
+            if (req.file) await removeUploadedFile(req.file);
 
-        return res.status(200).json({
-            status: 200,
-            message: 'Promo deleted successfully',
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-/**
- * Publish a promo
- */
-export const publishPromo = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-
-        // Check if promo exists
-        const existing = await PromoModel.findById(id);
-        if (!existing) {
             return res.status(404).json({
                 status: 404,
                 message: 'Promo not found',
             });
         }
 
-        const promo = await PromoModel.publish(id);
+        if (req.file) {
+            await removeManagedMedia(
+                existingPromo.video_url,
+                'promos',
+                req.get('host')
+            );
+        }
 
-        // Optional: create a notification when published
-        await Notifications.create({
+        return res.status(200).json({
+            status: 200,
+            message: 'Promo updated successfully',
+            data: updated,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const remove = async (req, res, next) => {
+    try {
+        const deleted = await Promos.remove(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Promo not found',
+            });
+        }
+
+        await removeManagedMedia(
+            deleted.video_url,
+            'promos',
+            req.get('host')
+        );
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Promo deleted successfully',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const publishPromo = async (req, res, next) => {
+    try {
+        const promo = await Promos.publish(req.params.id);
+
+        if (!promo) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Promo not found',
+            });
+        }
+
+        await notifySafely({
             title: 'Promo Published',
             message: `The promo "${promo.title}" is now live.`,
             type: 'promo',
             recipient_id: null,
             metadata: { promo_id: promo.id },
-            created_by: req.user?.id || null
+            created_by: req.user?.id || null,
         });
 
         return res.status(200).json({
@@ -172,23 +222,16 @@ export const publishPromo = async (req, res, next) => {
     }
 };
 
-/**
- * Unpublish a promo
- */
 export const unpublishPromo = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const promo = await Promos.unpublish(req.params.id);
 
-        // Check if promo exists
-        const existing = await PromoModel.findById(id);
-        if (!existing) {
+        if (!promo) {
             return res.status(404).json({
                 status: 404,
                 message: 'Promo not found',
             });
         }
-        
-        const promo = await PromoModel.unpublish(id);
 
         return res.status(200).json({
             status: 200,

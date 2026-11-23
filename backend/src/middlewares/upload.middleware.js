@@ -2,95 +2,67 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Utility to ensure the upload directory exists
-const ensureFolderExists = (folderPath) => {
-    if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
-    }
+const uploadRoot = path.resolve(process.cwd(), 'uploads');
+
+const ensureFolderExists = (folder) => {
+    const directory = path.join(uploadRoot, folder);
+    fs.mkdirSync(directory, { recursive: true });
+    return directory;
 };
 
-// ---------- IMAGE UPLOAD (Events) ----------
-const imageStorage = multer.diskStorage({
+const createStorage = (folder) => multer.diskStorage({
     destination: (req, file, cb) => {
-        const folder = 'uploads/events';
-        ensureFolderExists(folder);
-        cb(null, folder);
+        cb(null, ensureFolderExists(folder));
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        const extension = path.extname(file.originalname).toLowerCase();
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+        cb(null, uniqueName);
     }
 });
 
-const imageFilter = (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (!allowed.includes(ext)) {
-        return cb(new Error('Only image files are allowed (jpg, jpeg, png, gif)'), false);
+const validateFile = (allowedTypes, description) => (req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    const allowedMimeTypes = allowedTypes[extension];
+
+    if (!allowedMimeTypes || !allowedMimeTypes.includes(file.mimetype)) {
+        const error = new Error(`Invalid ${description} file type or MIME type`);
+        error.status = 400;
+        return cb(error);
     }
+
     cb(null, true);
 };
 
 export const uploadEventImage = multer({
-    storage: imageStorage,
-    fileFilter: imageFilter,
-    limits: { fileSize: 2 * 1024 * 1024 } // 2 MB limit
+    storage: createStorage('events'),
+    fileFilter: validateFile({
+        '.jpg': ['image/jpeg'],
+        '.jpeg': ['image/jpeg'],
+        '.png': ['image/png'],
+        '.gif': ['image/gif'],
+    }, 'image'),
+    limits: { fileSize: 2 * 1024 * 1024, files: 1 },
 });
-
-
-// ---------- VIDEO UPLOAD (Promos) ----------
-const videoStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const folder = 'uploads/promos';
-        ensureFolderExists(folder);
-        cb(null, folder);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const videoFilter = (req, file, cb) => {
-    const allowed = ['.mp4', '.mov', '.avi', '.mkv'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (!allowed.includes(ext)) {
-        return cb(new Error('Only video files are allowed (mp4, mov, avi, mkv)'), false);
-    }
-    cb(null, true);
-};
 
 export const uploadPromoVideo = multer({
-    storage: videoStorage,
-    fileFilter: videoFilter,
-    limits: { fileSize: 8 * 1024 * 1024 } // 8 MB limit
+    storage: createStorage('promos'),
+    fileFilter: validateFile({
+        '.mp4': ['video/mp4'],
+        '.mov': ['video/quicktime'],
+        '.avi': ['video/x-msvideo', 'video/avi'],
+        '.mkv': ['video/x-matroska'],
+    }, 'video'),
+    limits: { fileSize: 8 * 1024 * 1024, files: 1 },
 });
-
-
-// ---------- AUDIO UPLOAD (Announcements) ----------
-const audioStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const folder = 'uploads/announcements';
-        ensureFolderExists(folder);
-        cb(null, folder);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const audioFilter = (req, file, cb) => {
-    const allowed = ['.mp3', '.wav', '.m4a', '.ogg'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (!allowed.includes(ext)) {
-        return cb(new Error('Only audio files are allowed (mp3, wav, m4a, ogg)'), false);
-    }
-    cb(null, true);
-};
 
 export const uploadAudio = multer({
-    storage: audioStorage,
-    fileFilter: audioFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5 MB limit
+    storage: createStorage('announcements'),
+    fileFilter: validateFile({
+        '.mp3': ['audio/mpeg'],
+        '.wav': ['audio/wav', 'audio/x-wav'],
+        '.m4a': ['audio/mp4', 'audio/x-m4a'],
+        '.ogg': ['audio/ogg'],
+    }, 'audio'),
+    limits: { fileSize: 5 * 1024 * 1024, files: 1 },
 });
