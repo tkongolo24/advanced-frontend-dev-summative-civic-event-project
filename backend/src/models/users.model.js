@@ -1,124 +1,132 @@
 import db from '../config/db.js';
 
 /**
- * Create a new user
- * @param {Object} param0
- * @param {string} param0.full_name
- * @param {string} param0.email
- * @param {string} param0.password_hash
- * @param {string} [param0.role='user']
- * @returns {Object} created user (without password)
+ * Create a new regular user.
+ * Public registration cannot assign privileged roles.
  */
-export const createUser = async ({ full_name, email, password_hash, role = 'user' }) => {
+export const createUser = async ({ full_name, email, password_hash }) => {
     const res = await db.query(
         `INSERT INTO users (full_name, email, password_hash, role, is_active)
-         VALUES ($1, $2, $3, $4, $5)
+         VALUES ($1, $2, $3, 'user', true)
          RETURNING id, full_name, email, role, is_active`,
-        [full_name, email, password_hash, role, true]
+        [full_name, email, password_hash]
     );
+
     return res.rows[0];
 };
 
-
 /**
- * Find a user by email (including password_hash)
- * @param {string} email
- * @returns {Object|null}
+ * Find a user by email (including password_hash).
  */
 export const findByEmail = async (email) => {
-    const res = await db.query('SELECT * FROM users WHERE email=$1', [email]);
+    const res = await db.query(
+        'SELECT * FROM users WHERE email=$1',
+        [email]
+    );
+
     return res.rows[0] || null;
 };
 
 /**
- * Find a user by ID (without password_hash)
- * @param {string} id - UUID
- * @returns {Object|null}
+ * Find a user by ID (without password_hash).
  */
 export const findById = async (id) => {
     const res = await db.query(
-        'SELECT id, full_name, email, role, is_active, created_at, updated_at FROM users WHERE id=$1',
+        `SELECT id, full_name, email, role, is_active,
+                created_at, updated_at
+         FROM users WHERE id=$1`,
         [id]
     );
+
     return res.rows[0] || null;
 };
 
 /**
- * List all users with pagination
- * @param {Object} [filters]
- * @param {number} [filters.page=1]
- * @param {number} [filters.limit=20]
- * @returns {Array} List of users
+ * List all users with pagination.
  */
 export const findAll = async ({ page = 1, limit = 20 } = {}) => {
     const offset = (page - 1) * limit;
+
     const res = await db.query(
-        'SELECT id, full_name, email, role, is_active, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        `SELECT id, full_name, email, role, is_active,
+                created_at, updated_at
+         FROM users
+         ORDER BY created_at DESC
+         LIMIT $1 OFFSET $2`,
         [limit, offset]
     );
+
     return res.rows;
 };
 
 /**
- * Update a user's details
- * @param {string} id - UUID
- * @param {Object} param1
- * @param {string} param1.full_name
- * @param {string} param1.email
- * @param {string} param1.role
- * @param {boolean} param1.is_active
- * @returns {Object} Updated user
+ * Update only permitted profile fields.
  */
-export const updateUser = async (id, data) => {
-    // Build dynamic query
-    const fields = [];
-    const values = [];
-    let idx = 1;
+export const updateUser = async (id, data = {}) => {
+    const allowedFields = ['full_name', 'email'];
 
-    for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key}=$${idx}`);
-        values.push(value);
-        idx++;
+    const entries = Object.entries(data).filter(
+        ([key, value]) =>
+            allowedFields.includes(key) && value !== undefined
+    );
+
+    if (entries.length === 0) {
+        return findById(id);
     }
 
-    // Add updated_at
-    fields.push(`updated_at=NOW()`);
+    const fields = [];
+    const values = [];
 
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id=$${idx} RETURNING id, full_name, email, role, is_active, created_at, updated_at`;
+    entries.forEach(([key, value], index) => {
+        fields.push(`${key}=$${index + 1}`);
+        values.push(value);
+    });
+
+    fields.push('updated_at=NOW()');
+
     values.push(id);
 
+    const query = `
+        UPDATE users
+        SET ${fields.join(', ')}
+        WHERE id=$${values.length}
+        RETURNING id, full_name, email, role, is_active,
+                  created_at, updated_at
+    `;
+
     const res = await db.query(query, values);
-    return res.rows[0];
+
+    return res.rows[0] || null;
 };
 
 /**
- * Enable a user
- * @param {string} id - UUID
- * @returns {Object} Updated user
+ * Enable a user.
  */
 export const enableUser = async (id) => {
     const res = await db.query(
-        `UPDATE users 
-         SET is_active = $1, updated_at = NOW() 
-         WHERE id = $2 
-         RETURNING id, full_name, email, role, is_active, created_at, updated_at`,
-        [true, id]
+        `UPDATE users
+         SET is_active = true, updated_at = NOW()
+         WHERE id = $1
+         RETURNING id, full_name, email, role, is_active,
+                   created_at, updated_at`,
+        [id]
     );
+
     return res.rows[0];
 };
 
 /**
- * Disable a user
- * @param {string} id - UUID
- * @returns {Object} Updated user
+ * Disable a user.
  */
 export const disableUser = async (id) => {
     const res = await db.query(
-        `UPDATE users 
-         SET is_active = $1, updated_at = NOW() 
-         WHERE id = $2 
-         RETURNING id, full_name, email, role, is_active, created_at, updated_at`,
-        [false, id]
+        `UPDATE users
+         SET is_active = false, updated_at = NOW()
+         WHERE id = $1
+         RETURNING id, full_name, email, role, is_active,
+                   created_at, updated_at`,
+        [id]
     );
+
     return res.rows[0];
 };

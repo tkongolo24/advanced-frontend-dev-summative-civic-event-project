@@ -1,7 +1,12 @@
-import dotenv from 'dotenv';
+import './src/config/loadEnv.js';
+import { getJwtSecret } from './src/config/jwt.js';
 import app from './app.js';
 
-
-dotenv.config();
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`CivicEvents+ backend listening on port ${PORT}`));
+
+// Fail at startup if the JWT secret is missing or too short.
+getJwtSecret();
+
+app.listen(PORT, () => {
+    console.log(`CivicEvents+ backend listening on port ${PORT}`);
+});
