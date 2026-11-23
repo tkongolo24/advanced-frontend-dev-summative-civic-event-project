@@ -63,6 +63,13 @@ export const cancelRegistration = async (req, res, next) => {
             });
         }
 
+        if (event.starts_at && new Date(event.starts_at) <= new Date()) {
+            return res.status(409).json({
+                status: 409,
+                message: 'Registration cancellation is closed because the event has started'
+            });
+        }
+
         const cancelled = await EventRegistrations.cancelRegistration(
             user_id,
             event_id

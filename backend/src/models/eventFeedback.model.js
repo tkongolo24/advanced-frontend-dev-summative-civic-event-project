@@ -40,7 +40,8 @@ export const updateFeedback = async (id, user_id, { rating, comment }) => {
 
 export const findByEvent = async (event_id) => {
     const res = await db.query(
-        `SELECT ef.*, u.full_name, u.email
+        `SELECT ef.id, ef.event_id, ef.rating, ef.comment,
+                ef.created_at, u.full_name
          FROM event_feedback ef
          JOIN users u ON ef.user_id = u.id
          WHERE ef.event_id = $1

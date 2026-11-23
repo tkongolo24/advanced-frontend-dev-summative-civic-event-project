@@ -170,6 +170,19 @@ const Media = {
           item.audio_url || item.audio_path || item.audio
         );
 
+        const audioExtension = audio
+          ? audio.split("?")[0].split(".").pop().toLowerCase()
+          : "";
+
+        const audioMimeTypes = {
+          mp3: "audio/mpeg",
+          wav: "audio/wav",
+          m4a: "audio/mp4",
+          ogg: "audio/ogg"
+        };
+
+        const audioType = audioMimeTypes[audioExtension] || "audio/mpeg";
+
         return `
           <article class="media-card">
             <div class="media-card-content">
@@ -189,7 +202,7 @@ const Media = {
                     <audio controls preload="none">
                       <source
                         src="${this.escapeHTML(audio)}"
-                        type="audio/mpeg"
+                        type="${audioType}"
                       />
                       Your browser does not support audio playback.
                     </audio>
@@ -205,7 +218,7 @@ const Media = {
                 class="btn btn-outline announcement-details-button"
                 data-announcement-id="${this.escapeHTML(id)}"
               >
-                View Transcript
+                View Announcement Details
               </button>
             </div>
           </article>
@@ -246,10 +259,8 @@ const Media = {
     }
 
     const transcript =
-      announcement.transcript ||
-      announcement.transcript_text ||
       announcement.description ||
-      "No transcript is available.";
+      "No additional information is available.";
 
     const container = document.getElementById("page-content");
 
@@ -276,7 +287,7 @@ const Media = {
           </p>
 
           <section class="transcript-section">
-            <h2>Transcript</h2>
+            <h2>Additional Information</h2>
             <p class="transcript-text">
               ${this.escapeHTML(transcript)}
             </p>
@@ -382,6 +393,19 @@ const Media = {
           promo.video_url || promo.video_path || promo.video
         );
 
+        const videoExtension = video
+          ? video.split("?")[0].split(".").pop().toLowerCase()
+          : "";
+
+        const videoMimeTypes = {
+          mp4: "video/mp4",
+          mov: "video/quicktime",
+          avi: "video/x-msvideo",
+          mkv: "video/x-matroska"
+        };
+
+        const videoType = videoMimeTypes[videoExtension] || "video/mp4";
+
         return `
           <article class="media-card">
             <div class="media-card-content">
@@ -405,7 +429,7 @@ const Media = {
                     >
                       <source
                         src="${this.escapeHTML(video)}"
-                        type="video/mp4"
+                        type="${videoType}"
                       />
 
                       ${

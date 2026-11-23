@@ -58,7 +58,6 @@ router.get('/my-feedback', authenticate, Controller.getUserFeedback);
 router.get(
     '/event/:event_id',
     authenticate,
-    authorize(['admin']),
     Controller.getEventFeedback
 );
 

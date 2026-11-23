@@ -16,7 +16,7 @@ const Events = {
   selectedEvent: null,
   filters: {
     search: "",
-    category: "",
+    location: "",
     status: ""
   },
 
@@ -153,7 +153,10 @@ const Events = {
         registration.event?.id ||
         registration.event?.event_id;
 
-      return String(registeredEventId) === String(eventId);
+      return (
+        registration.status === "registered" &&
+        String(registeredEventId) === String(eventId)
+      );
     });
   },
 
@@ -187,10 +190,12 @@ const Events = {
         </div>
 
         <div class="form-group">
-          <label for="event-category">Category</label>
-          <select id="event-category">
-            <option value="">All categories</option>
-          </select>
+          <label for="event-location-filter">Location</label>
+          <input
+            type="search"
+            id="event-location-filter"
+            placeholder="Filter by location..."
+          />
         </div>
 
         <div class="form-group">
@@ -281,16 +286,16 @@ const Events = {
    */
   attachFilterEvents() {
     const search = document.getElementById("event-search");
-    const category = document.getElementById("event-category");
+    const location = document.getElementById("event-location-filter");
     const status = document.getElementById("event-status");
 
     search?.addEventListener("input", (event) => {
-      this.filters.search = event.target.value.toLowerCase();
+      this.filters.search = event.target.value.toLowerCase().trim();
       this.renderEventCards();
     });
 
-    category?.addEventListener("change", (event) => {
-      this.filters.category = event.target.value;
+    location?.addEventListener("input", (event) => {
+      this.filters.location = event.target.value.toLowerCase().trim();
       this.renderEventCards();
     });
 
@@ -309,33 +314,30 @@ const Events = {
     return this.events.filter((event) => {
       const title = (event.title || event.name || "").toLowerCase();
       const description = (event.description || "").toLowerCase();
+      const location = (event.location || "").toLowerCase();
 
       const matchesSearch =
-        title.includes(this.filters.search) ||
-        description.includes(this.filters.search);
+        title.includes(this.filters.search || "") ||
+        description.includes(this.filters.search || "");
 
-      const matchesCategory =
-        !this.filters.category ||
-        event.category === this.filters.category;
+      const matchesLocation =
+        !this.filters.location ||
+        location.includes(this.filters.location);
 
-      const eventDate = new Date(
-        event.start_date || event.date || ""
-      );
+      const rawDate = event.starts_at || event.start_date || event.date;
+      const eventDate = rawDate ? new Date(rawDate) : null;
 
-      const isPast =
-        !Number.isNaN(eventDate.getTime()) &&
-        eventDate < now;
+      const hasValidDate =
+        eventDate && !Number.isNaN(eventDate.getTime());
+
+      const isPast = hasValidDate && eventDate < now;
 
       const matchesStatus =
         !this.filters.status ||
         (this.filters.status === "past" && isPast) ||
-        (this.filters.status === "upcoming" && !isPast);
+        (this.filters.status === "upcoming" && hasValidDate && !isPast);
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesStatus
-      );
+      return matchesSearch && matchesLocation && matchesStatus;
     });
   },
 
@@ -365,7 +367,7 @@ const Events = {
         const id = event.id || event.event_id;
         const title = event.title || event.name || "Untitled event";
         const image = this.getImage(event);
-        const date = event.start_date || event.date;
+        const date = event.starts_at || event.start_date || event.date;
         const category = event.category || "General";
 
         return `
@@ -478,7 +480,7 @@ const Events = {
           <h1>${this.escapeHTML(title)}</h1>
 
           <p class="event-date">
-            ${this.formatDate(selected.start_date || selected.date)}
+            ${this.formatDate(selected.starts_at || selected.start_date || selected.date)}
           </p>
 
           <p class="event-location">
@@ -496,6 +498,10 @@ const Events = {
           <div id="event-action-area"></div>
 
           <section class="feedback-section">
+            <div id="event-feedback-list" aria-live="polite">
+              <p>Loading event feedback...</p>
+            </div>
+
             <h2>Share your feedback</h2>
 
             <form id="event-feedback-form">
@@ -536,6 +542,7 @@ const Events = {
       ?.addEventListener("click", () => this.render());
 
     this.renderRegistrationAction(id);
+    this.loadEventFeedback(id);
     this.attachFeedbackForm(id);
   },
 
@@ -544,40 +551,48 @@ const Events = {
    */
   renderRegistrationAction(eventId) {
     const area = document.getElementById("event-action-area");
-
     if (!area) return;
+
+    const selectedEvent = this.events.find(
+      (event) => String(event.id) === String(eventId)
+    );
+
+    if (
+      selectedEvent &&
+      (selectedEvent.published !== true ||
+        (selectedEvent.starts_at &&
+          new Date(selectedEvent.starts_at).getTime() <= Date.now()))
+    ) {
+      area.innerHTML = `
+        <p class="form-message">
+          Registration is closed for this event.
+        </p>
+      `;
+      return;
+    }
 
     if (!auth.isAuthenticated()) {
       area.innerHTML = `
         <p>Sign in to register for this event.</p>
-        <a href="#/login" class="btn btn-primary">
-          Sign In
-        </a>
+        <a href="#/login" class="btn btn-primary">Sign In</a>
       `;
-
       return;
     }
 
     const registered = this.isRegistered(eventId);
 
     area.innerHTML = registered
-      ? `
-        <button id="cancel-registration" class="btn btn-outline">
-          Cancel Registration
-        </button>
-      `
-      : `
-        <button id="register-event" class="btn btn-primary">
-          Register for Event
-        </button>
-      `;
+      ? `<button id="cancel-registration" class="btn btn-outline">
+           Cancel Registration
+         </button>`
+      : `<button id="register-event" class="btn btn-primary">
+           Register for Event
+         </button>`;
 
-    document
-      .getElementById("register-event")
+    document.getElementById("register-event")
       ?.addEventListener("click", () => this.register(eventId));
 
-    document
-      .getElementById("cancel-registration")
+    document.getElementById("cancel-registration")
       ?.addEventListener("click", () => this.cancelRegistration(eventId));
   },
 
@@ -614,6 +629,74 @@ const Events = {
       this.showMessage("Your registration has been cancelled.", "success");
     } catch (error) {
       this.showMessage(error.message || "Unable to cancel registration.");
+    }
+  },
+
+  /**
+   * Load and display feedback for an event.
+   */
+  async loadEventFeedback(eventId) {
+    const container = document.getElementById("event-feedback-list");
+    if (!container) return;
+
+    try {
+      const response = await api.get(
+        `/event-feedback/event/${encodeURIComponent(eventId)}`
+      );
+
+      const payload = response?.data ?? response;
+      const feedback = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.feedback)
+          ? payload.feedback
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+      if (!feedback.length) {
+        container.innerHTML = `
+          <h2>Event feedback</h2>
+          <p>No feedback has been submitted for this event yet.</p>
+        `;
+        return;
+      }
+
+      const average =
+        feedback.reduce((total, item) => total + Number(item.rating || 0), 0) /
+        feedback.length;
+
+      container.innerHTML = `
+        <h2>Event feedback</h2>
+        <p class="feedback-average">
+          <strong>${average.toFixed(1)} / 5</strong>
+          average rating · ${feedback.length}
+          ${feedback.length === 1 ? "review" : "reviews"}
+        </p>
+        <div class="feedback-list">
+          ${feedback.map((item) => `
+            <article class="feedback-card">
+              <div class="feedback-card-heading">
+                <strong>${this.escapeHTML(item.full_name || "CivicEvents user")}</strong>
+                <span aria-label="${Number(item.rating)} out of 5 stars">
+                  ${"★".repeat(Math.max(0, Math.min(5, Number(item.rating) || 0)))}
+                  ${"☆".repeat(5 - Math.max(0, Math.min(5, Number(item.rating) || 0)))}
+                </span>
+              </div>
+              ${item.comment
+                ? `<p>${this.escapeHTML(item.comment)}</p>`
+                : `<p>No written comment.</p>`}
+              <small>${item.created_at
+                ? this.formatDate(item.created_at)
+                : ""}</small>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    } catch (error) {
+      container.innerHTML = `
+        <h2>Event feedback</h2>
+        <p>Feedback could not be loaded. Please try again later.</p>
+      `;
     }
   },
 
@@ -655,6 +738,7 @@ const Events = {
         );
 
         form.reset();
+        await this.loadEventFeedback(eventId);
       } catch (error) {
         this.showFeedbackMessage(
           error.message || "Unable to submit feedback."
@@ -670,6 +754,22 @@ const Events = {
     const box = document.getElementById("events-message");
 
     if (!box) {
+      const actionArea = document.getElementById("event-action-area");
+      if (actionArea) {
+        let detailMessage = document.getElementById("event-action-message");
+
+        if (!detailMessage) {
+          detailMessage = document.createElement("p");
+          detailMessage.id = "event-action-message";
+          detailMessage.setAttribute("role", "status");
+          actionArea.appendChild(detailMessage);
+        }
+
+        detailMessage.textContent = message;
+        detailMessage.className = `form-message ${type}`;
+        return;
+      }
+
       console.log(message);
       return;
     }
