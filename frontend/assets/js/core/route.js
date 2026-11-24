@@ -93,6 +93,8 @@ class Router {
   /**
    * Check whether the user can access a route.
    */
+  // Role-based route guard: requiresAdmin routes are accessible
+  // only to authenticated administrators; other users are redirected.
   checkAccess(route) {
     if (
       route.requiresAuth &&

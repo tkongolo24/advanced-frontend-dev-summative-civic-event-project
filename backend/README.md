@@ -43,7 +43,7 @@ Before setting up, make sure you have the following installed:
     - After installing PostgreSQL, create the project database: `CREATE DATABASE civic-events-db;`. You can run this in the PostgreSQL terminal (psql) or in pgAdmin.
 
 ## 2. Clone the Project
-- Open the terminal (Git Bash) in VSCode and complete the tasks below
+- Open a terminal in VS Code and complete the tasks below
     - Clone the repository from GitHub classrooms: `git clone <repository-url>`
 
     - Navigate to the backend directory: `cd backend`
@@ -55,19 +55,19 @@ Before setting up, make sure you have the following installed:
     - Import the file `CivicEvents+ API.postman_collection.json` located in the backend directory into postman
 
 ## 4. Populate Database With Tables
-- Open the terminal (Git Bash) in VSCode and complete the tasks below
+- Open a terminal in VS Code and complete the tasks below
     - Paste the below variables in the terminal and run. Replace these with actual db credentials
     ```
     export DB_USER=<db-user>
-    export DB_PASSWORD=<db-password>
+    export DB_PASS=<db-password>
     export DB_NAME=civic-events-db
     export DB_HOST=<db_host>
     export DB_PORT=<db_port>
     ```
 
-- Run the command `psql -U $DB_USER -d $DB_NAME -h $DB_HOST -p $DB_PORT -f ./migrations/001_create_tables.sql` to create the necessary tables in your database
+- Run the command `npm run db:setup` to create the necessary tables in your database
 
-- Configure the Environment Variables: Change the values in the `.env` file with the approapriate database credentials
+- Configure the Environment Variables: Change the values in the `.env` file with the appropriate database credentials
 
 ## 5. Install Node Dependencies
 - To install dependencies, run the command `npm install`

@@ -93,6 +93,8 @@ const AdminUI = {
 
     if (!container) return;
 
+    // Admin-only UI guard: prevent non-admin users from accessing
+    // dashboard management functionality through the frontend.
     if (!this.isAdmin()) {
       container.innerHTML = `
         <section class="page-section">
@@ -202,29 +204,53 @@ const AdminUI = {
       0;
 
     container.innerHTML = `
-      <section class="page-section">
-        <div class="page-header">
-          <div>
-            <p class="eyebrow">Administration</p>
+      <section class="page-section admin-dashboard">
+
+        <header class="admin-dashboard-banner">
+          <div class="admin-dashboard-banner-content">
+            <p class="eyebrow">ADMINISTRATION / CONTROL CENTER</p>
             <h1>Admin Dashboard</h1>
-            <p>Manage CivicEvents and its users.</p>
+            <p>
+              Manage your community, oversee events, and keep
+              CivicEvents running smoothly.
+            </p>
           </div>
-        </div>
 
-        <div class="stats-grid">
-          ${this.renderStatCard("Total Users", totalUsers)}
-          ${this.renderStatCard("Events", totalEvents)}
-          ${this.renderStatCard("Registrations", totalRegistrations)}
-          ${this.renderStatCard("Announcements", totalAnnouncements)}
-          ${this.renderStatCard("Promos", totalPromos)}
-        </div>
-
-        <div class="card admin-events-card">
-          <div class="section-heading">
+          <div class="admin-dashboard-access">
+            <span class="admin-access-indicator"></span>
             <div>
-              <h2>Event Management</h2>
-              <p>Create, edit and manage CivicEvents events.</p>
+              <strong>Administrator</strong>
+              <span>Management access</span>
             </div>
+          </div>
+        </header>
+
+        <section class="admin-overview">
+          <div class="admin-section-intro">
+            <div>
+              <p class="eyebrow">AT A GLANCE</p>
+              <h2>Platform overview</h2>
+              <p>Here's what's happening across CivicEvents.</p>
+            </div>
+          </div>
+
+          <div class="stats-grid admin-stats-grid">
+            ${this.renderStatCard("Total Users", totalUsers)}
+            ${this.renderStatCard("Events", totalEvents)}
+            ${this.renderStatCard("Registrations", totalRegistrations)}
+            ${this.renderStatCard("Announcements", totalAnnouncements)}
+            ${this.renderStatCard("Promos", totalPromos)}
+          </div>
+        </section>
+
+        <section class="card admin-events-card admin-management-card">
+          <div class="admin-management-heading">
+            <div>
+              <p class="eyebrow">CONTENT MANAGEMENT</p>
+              <h2>Event Management</h2>
+              <p>Create events, update their details, and manage publication.</p>
+            </div>
+            <span class="admin-section-number">01</span>
           </div>
 
           <form id="admin-event-form" class="admin-event-form">
@@ -280,8 +306,11 @@ const AdminUI = {
             <div id="admin-event-message" class="form-message hidden"></div>
           </form>
 
-          <div class="section-heading">
-            <h3>Existing Events</h3>
+          <div class="admin-table-heading">
+            <div>
+              <h3>Existing Events</h3>
+              <p>Review and manage events already on the platform.</p>
+            </div>
             <button type="button" class="btn btn-secondary" id="refresh-events">
               Refresh
             </button>
@@ -290,31 +319,35 @@ const AdminUI = {
           <div id="admin-events-table">
             <div class="loading-state"><p>Loading events...</p></div>
           </div>
-        </div>
+        </section>
 
-        <div class="card admin-users-card">
-          <div class="section-heading">
+        <section class="card admin-users-card admin-management-card">
+          <div class="admin-management-heading">
             <div>
+              <p class="eyebrow">COMMUNITY MANAGEMENT</p>
               <h2>User Management</h2>
-              <p>View and manage user account status.</p>
+              <p>Find accounts and manage user access to CivicEvents.</p>
+            </div>
+            <span class="admin-section-number">02</span>
+          </div>
+
+          <div class="admin-users-toolbar">
+            <div class="form-group">
+              <label for="user-search">Find a user</label>
+              <input
+                type="search"
+                id="user-search"
+                placeholder="Search by name or email..."
+              />
             </div>
 
             <button
               class="btn btn-secondary"
               id="refresh-users"
+              type="button"
             >
-              Refresh
+              Refresh Users
             </button>
-          </div>
-
-          <div class="form-group">
-            <label for="user-search">Search users</label>
-
-            <input
-              type="search"
-              id="user-search"
-              placeholder="Search by name or email..."
-            />
           </div>
 
           <div id="admin-users-table">
@@ -322,7 +355,8 @@ const AdminUI = {
               <p>Loading users...</p>
             </div>
           </div>
-        </div>
+        </section>
+
       </section>
     `;
 
@@ -345,11 +379,25 @@ const AdminUI = {
   },
 
   renderStatCard(label, value) {
+    const icons = {
+      "Total Users": "👥",
+      "Events": "📅",
+      "Registrations": "🎟️",
+      "Announcements": "📢",
+      "Promos": "▶"
+    };
+
     return `
-      <div class="card stat-card">
-        <p class="stat-label">${this.escapeHTML(label)}</p>
+      <article class="card stat-card admin-stat-card">
+        <div class="admin-stat-top">
+          <span class="stat-label">${this.escapeHTML(label)}</span>
+          <span class="admin-stat-icon" aria-hidden="true">
+            ${icons[label] || "•"}
+          </span>
+        </div>
         <h2 class="stat-value">${this.escapeHTML(value)}</h2>
-      </div>
+        <span class="admin-stat-caption">Platform total</span>
+      </article>
     `;
   },
 
@@ -395,9 +443,10 @@ const AdminUI = {
 
     if (!this.events?.length) {
       table.innerHTML = `
-        <div class="empty-state">
+        <div class="admin-table-empty">
+          <span class="admin-empty-icon">📅</span>
           <h3>No events yet</h3>
-          <p>Use the form above to create the first event.</p>
+          <p>Events you create will appear here.</p>
         </div>
       `;
       return;
@@ -408,51 +457,89 @@ const AdminUI = {
         ? new Date(event.starts_at).toLocaleString()
         : "Not set";
 
+      const published =
+        event.published === true || event.published === "true";
+
       return `
         <tr>
-          <td>${this.escapeHTML(event.title || "Untitled event")}</td>
-          <td>${this.escapeHTML(event.location || "Not set")}</td>
-          <td>${this.escapeHTML(start)}</td>
           <td>
-            <span class="status-badge ${event.published ? "status-active" : "status-disabled"}">
-              ${event.published ? "Published" : "Draft"}
+            <div class="admin-table-primary">
+              <strong>${this.escapeHTML(event.title || "Untitled event")}</strong>
+              <span>Event #${this.escapeHTML(event.id)}</span>
+            </div>
+          </td>
+
+          <td>
+            <span class="admin-table-location">
+              <span aria-hidden="true">⌖</span>
+              ${this.escapeHTML(event.location || "Not set")}
             </span>
           </td>
+
           <td>
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm toggle-event-published"
-              data-id="${this.escapeHTML(event.id)}"
-              data-published="${event.published ? "true" : "false"}"
-            >${event.published ? "Unpublish" : "Publish"}</button>
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm view-event-attendees"
-              data-id="${this.escapeHTML(event.id)}"
-            >Attendees</button>
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm edit-admin-event"
-              data-id="${this.escapeHTML(event.id)}"
-            >Edit</button>
-            <button
-              type="button"
-              class="btn btn-danger btn-sm delete-admin-event"
-              data-id="${this.escapeHTML(event.id)}"
-            >Delete</button>
+            <span class="admin-table-date">
+              ${this.escapeHTML(start)}
+            </span>
+          </td>
+
+          <td>
+            <span class="admin-status ${
+              published ? "is-published" : "is-draft"
+            }">
+              <span class="admin-status-dot"></span>
+              ${published ? "Published" : "Draft"}
+            </span>
+          </td>
+
+          <td>
+            <div class="admin-row-actions">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm toggle-event-published"
+                data-id="${this.escapeHTML(event.id)}"
+                data-published="${published}"
+              >${published ? "Unpublish" : "Publish"}</button>
+
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm view-event-attendees"
+                data-id="${this.escapeHTML(event.id)}"
+              >Attendees</button>
+
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm edit-admin-event"
+                data-id="${this.escapeHTML(event.id)}"
+              >Edit</button>
+
+              <button
+                type="button"
+                class="btn btn-danger btn-sm delete-admin-event"
+                data-id="${this.escapeHTML(event.id)}"
+              >Delete</button>
+            </div>
           </td>
         </tr>
       `;
     }).join("");
 
     table.innerHTML = `
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div class="admin-table-overview">
+        <div>
+          <strong>${this.events.length} ${
+            this.events.length === 1 ? "event" : "events"
+          }</strong>
+          <span>Manage your platform events</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper admin-data-table-wrapper">
+        <table class="data-table admin-data-table">
           <thead>
             <tr>
-              <th>Title</th>
+              <th>Event</th>
               <th>Location</th>
-              <th>Starts</th>
+              <th>Start date</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -464,7 +551,10 @@ const AdminUI = {
 
     table.querySelectorAll(".toggle-event-published").forEach((button) => {
       button.addEventListener("click", () =>
-        this.toggleEventPublished(button.dataset.id, button.dataset.published === "true")
+        this.toggleEventPublished(
+          button.dataset.id,
+          button.dataset.published === "true"
+        )
       );
     });
 
@@ -475,11 +565,15 @@ const AdminUI = {
     });
 
     table.querySelectorAll(".edit-admin-event").forEach((button) => {
-      button.addEventListener("click", () => this.editEvent(button.dataset.id));
+      button.addEventListener("click", () =>
+        this.editEvent(button.dataset.id)
+      );
     });
 
     table.querySelectorAll(".delete-admin-event").forEach((button) => {
-      button.addEventListener("click", () => this.deleteEvent(button.dataset.id));
+      button.addEventListener("click", () =>
+        this.deleteEvent(button.dataset.id)
+      );
     });
   },
 
@@ -680,19 +774,109 @@ const AdminUI = {
   },
 
   async deleteEvent(id) {
-    const event = this.events.find((item) => String(item.id) === String(id));
+    const event = this.events.find(
+      (item) => String(item.id) === String(id)
+    );
+
     if (!event) return;
 
-    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) {
-      return;
-    }
+    // Prevent multiple confirmation dialogs.
+    document.querySelector(".delete-confirm-overlay")?.remove();
 
-    try {
-      await api.delete(`/events/${encodeURIComponent(id)}`);
-      await this.loadEvents();
-    } catch (error) {
-      window.alert(this.getErrorMessage(error, "Unable to delete this event."));
-    }
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay delete-confirm-overlay";
+
+    overlay.innerHTML = `
+      <section
+        class="modal-content delete-confirm-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-confirm-title"
+        aria-describedby="delete-confirm-description"
+      >
+        <div class="delete-confirm-icon" aria-hidden="true">
+          <span>!</span>
+        </div>
+
+        <p class="eyebrow">EVENT MANAGEMENT</p>
+
+        <h2 id="delete-confirm-title">Delete this event?</h2>
+
+        <p id="delete-confirm-description">
+          You're about to permanently delete this event:
+        </p>
+
+        <div class="delete-event-preview">
+          <span class="delete-event-preview-label">EVENT TO DELETE</span>
+          <strong>${this.escapeHTML(event.title || "Untitled event")}</strong>
+        </div>
+
+        <p class="delete-confirm-warning">
+          This action cannot be undone.
+        </p>
+
+        <p class="delete-confirm-error" role="alert" hidden></p>
+
+        <div class="delete-confirm-actions">
+          <button type="button" class="btn btn-secondary delete-cancel">
+            Keep Event
+          </button>
+
+          <button type="button" class="btn btn-danger delete-confirm-button">
+            Delete Event
+          </button>
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const cancelButton = overlay.querySelector(".delete-cancel");
+    const confirmButton = overlay.querySelector(".delete-confirm-button");
+    const errorBox = overlay.querySelector(".delete-confirm-error");
+
+    const closeModal = () => {
+      document.removeEventListener("keydown", handleEscape);
+      overlay.remove();
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") closeModal();
+    };
+
+    cancelButton.addEventListener("click", closeModal);
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeModal();
+    });
+
+    document.addEventListener("keydown", handleEscape);
+
+    confirmButton.addEventListener("click", async () => {
+      confirmButton.disabled = true;
+      cancelButton.disabled = true;
+      confirmButton.textContent = "Deleting...";
+      errorBox.hidden = true;
+
+      try {
+        await api.delete(`/events/${encodeURIComponent(id)}`);
+
+        closeModal();
+        await this.loadEvents();
+      } catch (error) {
+        errorBox.textContent = this.getErrorMessage(
+          error,
+          "Unable to delete this event. Please try again."
+        );
+
+        errorBox.hidden = false;
+        confirmButton.disabled = false;
+        cancelButton.disabled = false;
+        confirmButton.textContent = "Try Again";
+      }
+    });
+
+    cancelButton.focus();
   },
 
   resetEventForm() {
@@ -764,10 +948,7 @@ const AdminUI = {
   },
 
   renderUsersTable() {
-    const tableContainer = document.querySelector(
-      "#admin-users-table"
-    );
-
+    const tableContainer = document.querySelector("#admin-users-table");
     if (!tableContainer) return;
 
     const filteredUsers = this.users.filter((user) => {
@@ -787,88 +968,116 @@ const AdminUI = {
 
     if (!filteredUsers.length) {
       tableContainer.innerHTML = `
-        <div class="empty-state">
+        <div class="admin-table-empty">
+          <span class="admin-empty-icon">👥</span>
           <h3>No users found</h3>
-          <p>Try changing your search.</p>
+          <p>Try another name or email address.</p>
         </div>
       `;
       return;
     }
 
-    const rows = filteredUsers
-      .map((user) => {
-        const fullName =
-          user.full_name ||
-          [user.first_name, user.last_name].filter(Boolean).join(" ") ||
-          "Unnamed User";
+    const rows = filteredUsers.map((user) => {
+      const fullName =
+        user.full_name ||
+        [user.first_name, user.last_name].filter(Boolean).join(" ") ||
+        "Unnamed User";
 
-        const isActive =
-          user.is_active !== false &&
-          user.isActive !== false &&
-          user.status !== "disabled";
+      const isActive =
+        user.is_active !== false &&
+        user.isActive !== false &&
+        user.status !== "disabled";
 
-        const isCurrentUser =
-          String(user.id) ===
-          String(this.getCurrentUser()?.id);
+      const isCurrentUser =
+        String(user.id) === String(this.getCurrentUser()?.id);
 
-        return `
-          <tr>
-            <td>${this.escapeHTML(fullName)}</td>
+      const initials = fullName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0))
+        .join("")
+        .toUpperCase();
 
-            <td>${this.escapeHTML(user.email || "")}</td>
-
-            <td>
-              <span class="status-badge ${
-                isActive ? "status-active" : "status-disabled"
-              }">
-                ${isActive ? "Active" : "Disabled"}
+      return `
+        <tr>
+          <td>
+            <div class="admin-user-identity">
+              <span class="admin-user-avatar">
+                ${this.escapeHTML(initials || "U")}
               </span>
-            </td>
+              <span class="admin-table-primary">
+                <strong>${this.escapeHTML(fullName)}</strong>
+                <span>${isCurrentUser ? "Your account" : "Platform member"}</span>
+              </span>
+            </div>
+          </td>
 
-            <td>
+          <td>${this.escapeHTML(user.email || "No email")}</td>
+
+          <td>
+            <span class="admin-status ${
+              isActive ? "is-published" : "is-draft"
+            }">
+              <span class="admin-status-dot"></span>
+              ${isActive ? "Active" : "Disabled"}
+            </span>
+          </td>
+
+          <td>
+            <span class="admin-role-label">
               ${this.escapeHTML(user.role || "user")}
-            </td>
+            </span>
+          </td>
 
-            <td>
-              ${
-                isCurrentUser
-                  ? `<span class="text-muted">Current account</span>`
-                  : `
-                    <button
-                      class="btn ${
-                        isActive
-                          ? "btn-danger"
-                          : "btn-primary"
-                      } btn-sm toggle-user-status"
-                      data-id="${this.escapeHTML(user.id)}"
-                      data-active="${isActive}"
-                    >
-                      ${isActive ? "Disable" : "Enable"}
-                    </button>
-                  `
-              }
-            </td>
-          </tr>
-        `;
-      })
-      .join("");
+          <td>
+            ${
+              isCurrentUser
+                ? `<span class="admin-current-user">Current account</span>`
+                : `
+                  <button
+                    type="button"
+                    class="btn ${
+                      isActive ? "btn-danger" : "btn-primary"
+                    } btn-sm toggle-user-status"
+                    data-id="${this.escapeHTML(user.id)}"
+                    data-active="${isActive}"
+                  >
+                    ${isActive ? "Disable account" : "Enable account"}
+                  </button>
+                `
+            }
+          </td>
+        </tr>
+      `;
+    }).join("");
 
     tableContainer.innerHTML = `
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div class="admin-table-overview">
+        <div>
+          <strong>${filteredUsers.length} ${
+            filteredUsers.length === 1 ? "user" : "users"
+          }</strong>
+          <span>${
+            this.searchTerm
+              ? "Matching your search"
+              : "Registered platform accounts"
+          }</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper admin-data-table-wrapper">
+        <table class="data-table admin-data-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
+              <th>User</th>
+              <th>Email address</th>
               <th>Status</th>
               <th>Role</th>
               <th>Actions</th>
             </tr>
           </thead>
-
-          <tbody>
-            ${rows}
-          </tbody>
+          <tbody>${rows}</tbody>
         </table>
       </div>
     `;

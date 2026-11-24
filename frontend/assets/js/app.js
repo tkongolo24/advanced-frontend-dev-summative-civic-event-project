@@ -29,16 +29,22 @@ const App = {
       <div class="app-shell">
         <header class="top-navbar">
           <a href="#/" class="brand flex items-center gap-3">
-            <span class="brand-mark">C</span>
+            <span class="brand-mark">CE</span>
             <span class="brand-name">CivicEvents</span>
           </a>
 
           <nav class="navbar-links flex items-center gap-8" aria-label="Main navigation">
-            <a href="#/events" class="nav-link">Events</a>
-            <a href="#/announcements" class="nav-link">
-              Announcements
-            </a>
-            <a href="#/promos" class="nav-link">Promos</a>
+            ${
+              isLoggedIn
+                ? `
+                  <a href="#/events" class="nav-link">Events</a>
+                  <a href="#/announcements" class="nav-link">
+                    Announcements
+                  </a>
+                  <a href="#/promos" class="nav-link">Promos</a>
+                `
+                : ""
+            }
           </nav>
 
           <div class="navbar-actions flex items-center gap-3">
@@ -170,30 +176,70 @@ const App = {
       render: () => {
         this.renderPage(
           "Discover your city.",
-          "Find events, announcements, and services happening around you.",
+          "Find the places, people, and experiences that make your city yours.",
           `
-            <div class="feature-grid">
-              <a href="#/events" class="feature-card">
-                <h2>Explore Events</h2>
-                <p>
-                  Discover activities and register for
-                  upcoming events.
-                </p>
-              </a>
+            <div class="home-page-content">
+              <section class="home-intro-panel">
+                <div>
+                  <p class="home-kicker">YOUR CITY. YOUR COMMUNITY.</p>
+                  <h2>There's more happening around you.</h2>
+                  <p>
+                    Discover local events, stay informed with community
+                    announcements, and explore what's happening in your city.
+                  </p>
+                </div>
 
-              <a href="#/announcements" class="feature-card">
-                <h2>Announcements</h2>
-                <p>
-                  Stay informed with important city updates.
-                </p>
-              </a>
+                <div class="home-actions">
+                  <a href="#/events" class="btn btn-primary">
+                    Explore Events <span aria-hidden="true">→</span>
+                  </a>
+                  <a href="#/signup" class="btn btn-secondary">
+                    Join the Community
+                  </a>
+                </div>
+              </section>
 
-              <a href="#/promos" class="feature-card">
-                <h2>Promos</h2>
-                <p>
-                  Watch videos and discover local promotions.
-                </p>
-              </a>
+              <section class="home-feature-section">
+                <div class="home-section-heading">
+                  <div>
+                    <p class="eyebrow">EXPLORE CIVICEVENTS</p>
+                    <h2>Stay connected to your city</h2>
+                  </div>
+                  <p>Everything happening in your community, in one place.</p>
+                </div>
+
+                <div class="home-feature-grid">
+                  <a href="#/events" class="home-feature-card">
+                    <span class="home-feature-number">01</span>
+                    <h3>Discover Events <span aria-hidden="true">↗</span></h3>
+                    <p>
+                      Find activities, community gatherings, and events
+                      worth adding to your calendar.
+                    </p>
+                    <span class="home-card-link">Explore events →</span>
+                  </a>
+
+                  <a href="#/announcements" class="home-feature-card">
+                    <span class="home-feature-number">02</span>
+                    <h3>City Announcements <span aria-hidden="true">↗</span></h3>
+                    <p>
+                      Listen to important updates and stay informed
+                      about what's happening around you.
+                    </p>
+                    <span class="home-card-link">Listen to updates →</span>
+                  </a>
+
+                  <a href="#/promos" class="home-feature-card">
+                    <span class="home-feature-number">03</span>
+                    <h3>Local Promos <span aria-hidden="true">↗</span></h3>
+                    <p>
+                      Explore local campaigns, videos, and promotions
+                      from your community.
+                    </p>
+                    <span class="home-card-link">Explore promos →</span>
+                  </a>
+                </div>
+              </section>
             </div>
           `
         );

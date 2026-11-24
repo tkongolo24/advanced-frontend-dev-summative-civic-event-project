@@ -369,6 +369,24 @@ const Events = {
         const image = this.getImage(event);
         const date = event.starts_at || event.start_date || event.date;
         const category = event.category || "General";
+        const eventText = `${title} ${category}`.toLowerCase();
+
+        let imageTheme = "community";
+        let imageLabel = "Community gathering";
+
+        if (/technology|digital|computer|literacy|software|coding/.test(eventText)) {
+          imageTheme = "technology";
+          imageLabel = "Technology & learning";
+        } else if (/summit|conference|innovation|business|entrepreneur/.test(eventText)) {
+          imageTheme = "summit";
+          imageLabel = "Ideas & innovation";
+        } else if (/music|concert|festival|art|culture|dance/.test(eventText)) {
+          imageTheme = "culture";
+          imageLabel = "Arts & culture";
+        } else if (/sport|football|fitness|marathon|game/.test(eventText)) {
+          imageTheme = "sports";
+          imageLabel = "Sports & activities";
+        }
 
         return `
           <article class="event-card">
@@ -383,8 +401,9 @@ const Events = {
                   />
                 `
                 : `
-                  <div class="event-card-image event-image-placeholder">
-                    <span>CivicEvents</span>
+                  <div class="event-card-image event-image-placeholder event-theme-${imageTheme}">
+                    <span class="event-placeholder-orbit" aria-hidden="true"></span>
+                    <span class="event-placeholder-label">${this.escapeHTML(imageLabel)}</span>
                   </div>
                 `
             }
@@ -453,86 +472,147 @@ const Events = {
     const id = selected.id || selected.event_id;
     const title = selected.title || selected.name || "Event";
     const image = this.getImage(selected);
+    const date = selected.starts_at || selected.start_date || selected.date;
+    const location = selected.location || "Location to be announced";
+    const category = selected.category || "General";
+    const description =
+      selected.description || "No description available.";
 
     container.innerHTML = `
       <section class="event-detail-page">
-        <button id="back-to-events" class="btn btn-outline">
-          ← Back to Events
-        </button>
 
-        ${
-          image
-            ? `
-              <img
-                class="event-detail-image"
-                src="${this.escapeHTML(image)}"
-                alt="${this.escapeHTML(title)}"
-              />
-            `
-            : ""
-        }
+        <div class="event-detail-topbar">
+          <button id="back-to-events" class="event-back-button">
+            <span aria-hidden="true">←</span>
+            Back to Events
+          </button>
+          <span class="event-detail-breadcrumb">Events / Details</span>
+        </div>
 
-        <div class="event-detail-content">
-          <span class="badge">
-            ${this.escapeHTML(selected.category || "General")}
-          </span>
+        <header class="event-detail-hero">
+          ${
+            image
+              ? `
+                <img
+                  class="event-detail-image"
+                  src="${this.escapeHTML(image)}"
+                  alt="${this.escapeHTML(title)}"
+                />
+              `
+              : `
+                <div class="event-detail-image-placeholder">
+                  <span>CivicEvents</span>
+                  <strong>${this.escapeHTML(category)}</strong>
+                </div>
+              `
+          }
 
-          <h1>${this.escapeHTML(title)}</h1>
-
-          <p class="event-date">
-            ${this.formatDate(selected.starts_at || selected.start_date || selected.date)}
-          </p>
-
-          <p class="event-location">
-            ${this.escapeHTML(
-              selected.location || "Location to be announced"
-            )}
-          </p>
-
-          <div class="event-description">
-            ${this.escapeHTML(
-              selected.description || "No description available."
-            )}
-          </div>
-
-          <div id="event-action-area"></div>
-
-          <section class="feedback-section">
-            <div id="event-feedback-list" aria-live="polite">
-              <p>Loading event feedback...</p>
+          <div class="event-detail-hero-content">
+            <span class="event-detail-category">
+              ${this.escapeHTML(category)}
+            </span>
+            <h1>${this.escapeHTML(title)}</h1>
+            <div class="event-detail-hero-meta">
+              <span>
+                <span aria-hidden="true">▦</span>
+                ${this.formatDate(date)}
+              </span>
+              <span>
+                <span aria-hidden="true">⌖</span>
+                ${this.escapeHTML(location)}
+              </span>
             </div>
+          </div>
+        </header>
 
-            <h2>Share your feedback</h2>
+        <div class="event-detail-main-grid">
 
-            <form id="event-feedback-form">
-              <div class="form-group">
-                <label for="feedback-rating">Rating</label>
-                <select id="feedback-rating" required>
-                  <option value="">Choose a rating</option>
-                  <option value="5">5 - Excellent</option>
-                  <option value="4">4 - Good</option>
-                  <option value="3">3 - Average</option>
-                  <option value="2">2 - Poor</option>
-                  <option value="1">1 - Very poor</option>
-                </select>
+          <main class="event-detail-information">
+            <section class="event-detail-panel">
+              <p class="eyebrow">ABOUT THIS EVENT</p>
+              <h2>Event overview</h2>
+              <div class="event-description">
+                ${this.escapeHTML(description)}
+              </div>
+            </section>
+
+            <section class="feedback-section event-feedback-section">
+              <div class="feedback-section-heading">
+                <div>
+                  <p class="eyebrow">COMMUNITY VOICES</p>
+                  <h2>Event feedback</h2>
+                  <p>See what other attendees thought about this event.</p>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="feedback-comment">Comment</label>
-                <textarea
-                  id="feedback-comment"
-                  rows="4"
-                  placeholder="Tell us about your experience..."
-                ></textarea>
+              <div id="event-feedback-list" aria-live="polite">
+                <p>Loading event feedback...</p>
               </div>
 
-              <button type="submit" class="btn btn-primary">
-                Submit Feedback
-              </button>
-            </form>
+              <div class="feedback-form-panel">
+                <div class="feedback-form-heading">
+                  <h3>Share your experience</h3>
+                  <p>Your feedback helps improve future events.</p>
+                </div>
 
-            <div id="feedback-message" class="form-message hidden"></div>
-          </section>
+                <form id="event-feedback-form">
+                  <div class="form-group">
+                    <label for="feedback-rating">Your rating</label>
+                    <select id="feedback-rating" required>
+                      <option value="">Choose a rating</option>
+                      <option value="5">5 - Excellent</option>
+                      <option value="4">4 - Good</option>
+                      <option value="3">3 - Average</option>
+                      <option value="2">2 - Poor</option>
+                      <option value="1">1 - Very poor</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="feedback-comment">Your comments</label>
+                    <textarea
+                      id="feedback-comment"
+                      rows="4"
+                      placeholder="Tell us about your experience..."
+                    ></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">
+                    Submit Feedback
+                  </button>
+                </form>
+
+                <div id="feedback-message" class="form-message hidden"></div>
+              </div>
+            </section>
+          </main>
+
+          <aside class="event-detail-sidebar">
+            <section class="event-registration-panel">
+              <p class="eyebrow">TAKE PART</p>
+              <h2>Join this event</h2>
+              <p>
+                Interested in attending? Use the option below to manage
+                your event registration.
+              </p>
+
+              <div class="event-registration-divider"></div>
+
+              <div id="event-action-area">
+                <p>Loading registration options...</p>
+              </div>
+            </section>
+
+            <section class="event-detail-note">
+              <span class="event-note-icon" aria-hidden="true">✦</span>
+              <h3>Be part of your community</h3>
+              <p>
+                Discover opportunities to connect, participate, and make
+                a difference through local events.
+              </p>
+            </section>
+          </aside>
+
         </div>
       </section>
     `;

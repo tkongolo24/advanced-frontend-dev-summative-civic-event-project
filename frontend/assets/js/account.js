@@ -182,107 +182,154 @@ const AccountUI = {
     const email = profile.email || "";
     const phone = profile.phone || "";
 
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`
+      .toUpperCase() || "U";
+
+    const fullName = `${firstName} ${lastName}`.trim() || "Your account";
+    const role = profile.role || "User";
+    const isActive = profile.is_active !== false;
+
     container.innerHTML = `
-      <section class="page-section">
-        <div class="page-header">
+      <section class="page-section profile-page">
+        <div class="page-header profile-page-header">
           <div>
-            <p class="eyebrow">Account</p>
+            <p class="eyebrow">YOUR CIVIC EVENTS ACCOUNT</p>
             <h1>My Profile</h1>
-            <p>Manage your personal information.</p>
+            <p class="page-description">
+              Manage your personal information and account details.
+            </p>
           </div>
         </div>
 
-        <div class="card profile-card">
-          <div class="account-message" hidden></div>
+        <div class="profile-layout">
+          <aside class="profile-overview-card">
+            <div class="profile-avatar" aria-label="Profile initials">
+              ${this.escapeHTML(initials)}
+            </div>
 
-          <form id="profile-form" class="form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="profile-first-name">
-                  First name
-                </label>
+            <h2>${this.escapeHTML(fullName)}</h2>
+            <p class="profile-overview-email">
+              ${this.escapeHTML(email)}
+            </p>
 
-                <input
-                  id="profile-first-name"
-                  name="first_name"
-                  type="text"
-                  value="${this.escapeHTML(firstName)}"
-                  required
-                  maxlength="100"
-                />
-              </div>
+            <span class="profile-role-badge">
+              ${this.escapeHTML(role)}
+            </span>
 
-              <div class="form-group">
-                <label for="profile-last-name">
-                  Last name
-                </label>
+            <div class="profile-overview-divider"></div>
 
-                <input
-                  id="profile-last-name"
-                  name="last_name"
-                  type="text"
-                  value="${this.escapeHTML(lastName)}"
-                  required
-                  maxlength="100"
-                />
+            <div class="profile-account-status">
+              <span class="profile-status-indicator ${
+                isActive ? "is-active" : "is-disabled"
+              }"></span>
+              <div>
+                <strong>Account status</strong>
+                <p>${isActive ? "Active" : "Disabled"}</p>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="profile-email">
-                Email address
-              </label>
-
-              <input
-                id="profile-email"
-                name="email"
-                type="email"
-                value="${this.escapeHTML(email)}"
-                required
-                disabled
-              />
-
-              <small>Email changes are not available here.</small>
-            </div>
-
-            <div class="form-group">
-              <label for="profile-phone">
-                Phone number
-              </label>
-
-              <input
-                id="profile-phone"
-                name="phone"
-                type="tel"
-                value="${this.escapeHTML(phone)}"
-                maxlength="30"
-              />
-            </div>
-
-            <div class="profile-readonly">
+            <div class="profile-overview-note">
+              <span aria-hidden="true">✓</span>
               <p>
-                <strong>Account role:</strong>
-                ${this.escapeHTML(profile.role || "User")}
-              </p>
-
-              <p>
-                <strong>Account status:</strong>
-                ${this.escapeHTML(
-                  profile.is_active === false
-                    ? "Disabled"
-                    : "Active"
-                )}
+                Keep your contact information up to date so you can
+                stay connected with community updates.
               </p>
             </div>
+          </aside>
 
-            <button
-              type="submit"
-              class="btn btn-primary"
-              id="save-profile"
-            >
-              Save Changes
-            </button>
-          </form>
+          <div class="card profile-card profile-form-card">
+            <div class="profile-form-heading">
+              <div>
+                <p class="eyebrow">PERSONAL INFORMATION</p>
+                <h2>Account details</h2>
+                <p>Update the information associated with your account.</p>
+              </div>
+              <span class="profile-edit-symbol" aria-hidden="true">✎</span>
+            </div>
+
+            <div class="account-message" hidden></div>
+
+            <form id="profile-form" class="form profile-form">
+              <div class="profile-form-section">
+                <h3>Basic information</h3>
+                <p>Your name and contact details.</p>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="profile-first-name">First name</label>
+                  <input
+                    id="profile-first-name"
+                    name="first_name"
+                    type="text"
+                    value="${this.escapeHTML(firstName)}"
+                    placeholder="Enter your first name"
+                    required
+                    maxlength="100"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="profile-last-name">Last name</label>
+                  <input
+                    id="profile-last-name"
+                    name="last_name"
+                    type="text"
+                    value="${this.escapeHTML(lastName)}"
+                    placeholder="Enter your last name"
+                    required
+                    maxlength="100"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="profile-email">Email address</label>
+                <input
+                  id="profile-email"
+                  name="email"
+                  type="email"
+                  value="${this.escapeHTML(email)}"
+                  disabled
+                />
+                <small>Email address cannot be changed here.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="profile-phone">Phone number</label>
+                <input
+                  id="profile-phone"
+                  name="phone"
+                  type="tel"
+                  value="${this.escapeHTML(phone)}"
+                  placeholder="Enter your phone number"
+                  maxlength="30"
+                />
+              </div>
+
+              <div class="profile-readonly">
+                <div>
+                  <span>Account role</span>
+                  <strong>${this.escapeHTML(role)}</strong>
+                </div>
+                <div>
+                  <span>Account status</span>
+                  <strong>${isActive ? "Active" : "Disabled"}</strong>
+                </div>
+              </div>
+
+              <div class="profile-form-actions">
+                <p>Your changes are saved to your account.</p>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  id="save-profile"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
     `;
@@ -439,6 +486,7 @@ const AccountUI = {
     if (!container) return;
 
     const isAdmin = this.isAdmin();
+    const total = this.notifications.length;
 
     const notificationHTML = this.notifications
       .map((notification) => {
@@ -459,22 +507,36 @@ const AccountUI = {
           notification.createdAt ||
           notification.date;
 
-        const formattedDate = createdAt
-          ? new Date(createdAt).toLocaleString()
+        const validDate = createdAt && !Number.isNaN(Date.parse(createdAt));
+
+        const formattedDate = validDate
+          ? new Date(createdAt).toLocaleString(undefined, {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit"
+            })
           : "";
 
         return `
-          <article class="notification-item">
+          <article class="notification-item notification-card">
+            <div class="notification-icon notification-card-icon"
+                 aria-hidden="true">
+              <span>↗</span>
+            </div>
+
             <div class="notification-content">
-              <h3>${this.escapeHTML(title)}</h3>
+              <div class="notification-card-heading">
+                <h3>${this.escapeHTML(title)}</h3>
+                ${
+                  formattedDate
+                    ? `<time>${this.escapeHTML(formattedDate)}</time>`
+                    : ""
+                }
+              </div>
 
-              <p>${this.escapeHTML(message)}</p>
-
-              ${
-                formattedDate
-                  ? `<small>${this.escapeHTML(formattedDate)}</small>`
-                  : ""
-              }
+              <p>${this.escapeHTML(message || "No additional details provided.")}</p>
             </div>
 
             ${
@@ -484,6 +546,7 @@ const AccountUI = {
                     class="btn btn-danger btn-sm delete-notification"
                     data-id="${this.escapeHTML(id)}"
                     aria-label="Delete notification"
+                    type="button"
                   >
                     Delete
                   </button>
@@ -496,27 +559,51 @@ const AccountUI = {
       .join("");
 
     container.innerHTML = `
-      <section class="page-section">
-        <div class="page-header">
+      <section class="page-section notifications-page">
+        <div class="page-header notifications-page-header">
           <div>
-            <p class="eyebrow">Updates</p>
+            <p class="eyebrow">YOUR CIVIC EVENTS INBOX</p>
             <h1>Notifications</h1>
-            <p>Stay informed about events and announcements.</p>
+            <p class="page-description">
+              Important updates, announcements, and information from your community.
+            </p>
           </div>
+
+          <div class="notifications-header-icon" aria-hidden="true">
+            <span>♢</span>
+          </div>
+        </div>
+
+        <div class="notifications-overview">
+          <div>
+            <p class="eyebrow">YOUR INBOX</p>
+            <h2>Recent updates</h2>
+            <p>Stay up to date with what's happening.</p>
+          </div>
+
+          <span class="notification-count">
+            ${total} ${total === 1 ? "notification" : "notifications"}
+          </span>
         </div>
 
         <div class="card notifications-card">
           ${
-            this.notifications.length
+            total
               ? `
                 <div class="notification-list">
                   ${notificationHTML}
                 </div>
               `
               : `
-                <div class="empty-state">
-                  <h2>No notifications yet</h2>
-                  <p>You're all caught up.</p>
+                <div class="empty-state notification-empty">
+                  <div class="notification-empty-icon" aria-hidden="true">
+                    ♢
+                  </div>
+                  <h2>You're all caught up</h2>
+                  <p>
+                    You don't have any notifications right now.
+                    New updates will appear here.
+                  </p>
                 </div>
               `
           }
