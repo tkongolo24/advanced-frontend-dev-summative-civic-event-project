@@ -256,6 +256,14 @@ const AdminUI = {
             </div>
 
             <div class="form-group">
+              <label for="admin-event-published">Publication status</label>
+              <select id="admin-event-published" name="published">
+                <option value="true" selected>Published</option>
+                <option value="false">Draft (not visible to users)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label for="admin-event-image">Event image (optional)</label>
               <input id="admin-event-image" name="image" type="file" accept="image/jpeg,image/png,image/gif">
             </div>
@@ -406,6 +414,17 @@ const AdminUI = {
           <td>${this.escapeHTML(event.location || "Not set")}</td>
           <td>${this.escapeHTML(start)}</td>
           <td>
+            <span class="status-badge ${event.published ? "status-active" : "status-disabled"}">
+              ${event.published ? "Published" : "Draft"}
+            </span>
+          </td>
+          <td>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm toggle-event-published"
+              data-id="${this.escapeHTML(event.id)}"
+              data-published="${event.published ? "true" : "false"}"
+            >${event.published ? "Unpublish" : "Publish"}</button>
             <button
               type="button"
               class="btn btn-secondary btn-sm view-event-attendees"
@@ -434,6 +453,7 @@ const AdminUI = {
               <th>Title</th>
               <th>Location</th>
               <th>Starts</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -441,6 +461,12 @@ const AdminUI = {
         </table>
       </div>
     `;
+
+    table.querySelectorAll(".toggle-event-published").forEach((button) => {
+      button.addEventListener("click", () =>
+        this.toggleEventPublished(button.dataset.id, button.dataset.published === "true")
+      );
+    });
 
     table.querySelectorAll(".view-event-attendees").forEach((button) => {
       button.addEventListener("click", () =>
@@ -455,6 +481,22 @@ const AdminUI = {
     table.querySelectorAll(".delete-admin-event").forEach((button) => {
       button.addEventListener("click", () => this.deleteEvent(button.dataset.id));
     });
+  },
+
+  async toggleEventPublished(eventId, currentlyPublished) {
+    const action = currentlyPublished ? "unpublish" : "publish";
+
+    try {
+      await api.patch(
+        `/events/${encodeURIComponent(eventId)}/${action}`
+      );
+      await this.loadEvents();
+    } catch (error) {
+      window.alert(this.getErrorMessage(
+        error,
+        `Unable to ${action} this event.`
+      ));
+    }
   },
 
   async viewEventAttendees(eventId) {
@@ -623,6 +665,10 @@ const AdminUI = {
       this.formatDateTimeInput(event.starts_at);
     document.querySelector("#admin-event-end").value =
       this.formatDateTimeInput(event.ends_at);
+    document.querySelector("#admin-event-published").value =
+      event.published === true || event.published === "true"
+        ? "true"
+        : "false";
     document.querySelector("#admin-event-image").value = "";
 
     document.querySelector("#event-form-heading").textContent = "Edit Event";

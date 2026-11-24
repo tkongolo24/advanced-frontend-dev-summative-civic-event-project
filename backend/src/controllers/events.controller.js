@@ -15,6 +15,9 @@ const notifySafely = async (data) => {
 export const create = async (req, res, next) => {
     try {
         const { title, description, location, starts_at, ends_at } = req.body;
+        const published = req.body.published === undefined
+            ? true
+            : req.body.published === true || req.body.published === 'true';
 
         const eventData = {
             title,
@@ -23,6 +26,7 @@ export const create = async (req, res, next) => {
             starts_at,
             ends_at,
             metadata: {},
+            published,
         };
 
         if (req.file) {
@@ -39,14 +43,16 @@ export const create = async (req, res, next) => {
             throw error;
         }
 
-        await notifySafely({
-            title: 'New Event Published',
-            message: `A new event titled "${createdEvent.title}" has been added!`,
-            type: 'event',
-            recipient_id: null,
-            metadata: { event_id: createdEvent.id },
-            created_by: req.user?.id || null,
-        });
+        if (createdEvent.published) {
+            await notifySafely({
+                title: 'New Event Published',
+                message: `A new event titled "${createdEvent.title}" has been added!`,
+                type: 'event',
+                recipient_id: null,
+                metadata: { event_id: createdEvent.id },
+                created_by: req.user?.id || null,
+            });
+        }
 
         return res.status(201).json({
             status: 201,
@@ -118,6 +124,10 @@ export const update = async (req, res, next) => {
             ends_at,
         } = req.body;
 
+        const published = req.body.published === undefined
+            ? existingEvent.published
+            : req.body.published === true || req.body.published === 'true';
+
         const metadata = {
             ...(existingEvent.metadata || {}),
         };
@@ -134,6 +144,7 @@ export const update = async (req, res, next) => {
             starts_at: starts_at ?? existingEvent.starts_at,
             ends_at: ends_at ?? existingEvent.ends_at,
             metadata,
+            published,
         };
 
         let updated;
@@ -166,6 +177,62 @@ export const update = async (req, res, next) => {
             status: 200,
             message: 'Event updated successfully',
             data: updated,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const publish = async (req, res, next) => {
+    try {
+        const existing = await Events.findById(req.params.id, true);
+
+        if (!existing) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Event not found',
+            });
+        }
+
+        const event = await Events.publish(req.params.id);
+
+        if (!existing.published) {
+            await notifySafely({
+                title: 'Event Published',
+                message: `The event "${event.title}" is now available.`,
+                type: 'event',
+                recipient_id: null,
+                metadata: { event_id: event.id },
+                created_by: req.user?.id || null,
+            });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Event published successfully',
+            data: event,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const unpublish = async (req, res, next) => {
+    try {
+        const event = await Events.unpublish(req.params.id);
+
+        if (!event) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Event not found',
+            });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Event unpublished successfully',
+            data: event,
         });
     } catch (error) {
         next(error);

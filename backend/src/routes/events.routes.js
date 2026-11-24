@@ -35,6 +35,9 @@ router.put(
     controller.update
 );
 
+router.patch('/:id/publish', authenticate, authorize(['admin']), controller.publish);
+router.patch('/:id/unpublish', authenticate, authorize(['admin']), controller.unpublish);
+
 router.delete('/:id', authenticate, authorize(['admin']), controller.remove);
 
 export default router;
